@@ -10,6 +10,17 @@ Preferred communication style: Simple, everyday language.
 Database: Supabase (PostgreSQL) - User requested Supabase integration with connection string configuration.
 Dashboard Layout: Mobile devices use collapsible sidebar, Desktop/laptop displays fixed left navigation without sidebar.
 
+## Recent Changes
+
+### Total Insights Page Enhancement (January 28, 2025)
+- Implemented comprehensive Total Insights page with date range filtering
+- Added interactive chart visualization using Recharts library
+- Created summary cards showing: Total Invoices, Total Worth, Average Value, Pending Payments
+- Integrated real-time data from API with fallback to sample data
+- Added quick filter buttons for Today, Week, Month views
+- Implemented responsive design for mobile and desktop layouts
+- Added Recent Invoices snapshot table with proper data handling
+
 ## System Architecture
 
 ### Frontend Architecture
