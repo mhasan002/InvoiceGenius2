@@ -1,8 +1,19 @@
-import { type User, type InsertUser, type Invoice, type InsertInvoice } from "@shared/schema";
+import { 
+  type User, 
+  type InsertUser, 
+  type Invoice, 
+  type InsertInvoice, 
+  type Service, 
+  type InsertService, 
+  type Package, 
+  type InsertPackage, 
+  type CompanyProfile, 
+  type InsertCompanyProfile 
+} from "@shared/schema";
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { users, invoices } from "@shared/schema";
+import { users, invoices, services, packages, companyProfiles } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
@@ -22,6 +33,27 @@ export interface IStorage {
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   updateInvoice(id: string, invoice: Partial<InsertInvoice>): Promise<Invoice | undefined>;
   deleteInvoice(id: string): Promise<boolean>;
+  
+  // Service operations
+  getServices(userId: string): Promise<Service[]>;
+  getService(id: string): Promise<Service | undefined>;
+  createService(service: InsertService & { userId: string }): Promise<Service>;
+  updateService(id: string, service: Partial<InsertService>): Promise<Service | undefined>;
+  deleteService(id: string): Promise<boolean>;
+  
+  // Package operations
+  getPackages(userId: string): Promise<Package[]>;
+  getPackage(id: string): Promise<Package | undefined>;
+  createPackage(packageData: InsertPackage & { userId: string }): Promise<Package>;
+  updatePackage(id: string, packageData: Partial<InsertPackage>): Promise<Package | undefined>;
+  deletePackage(id: string): Promise<boolean>;
+  
+  // Company Profile operations
+  getCompanyProfiles(userId: string): Promise<CompanyProfile[]>;
+  getCompanyProfile(id: string): Promise<CompanyProfile | undefined>;
+  createCompanyProfile(profile: InsertCompanyProfile & { userId: string }): Promise<CompanyProfile>;
+  updateCompanyProfile(id: string, profile: Partial<InsertCompanyProfile>): Promise<CompanyProfile | undefined>;
+  deleteCompanyProfile(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -84,6 +116,81 @@ export class DatabaseStorage implements IStorage {
 
   async deleteInvoice(id: string): Promise<boolean> {
     const result = await this.db.delete(invoices).where(eq(invoices.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Service operations
+  async getServices(userId: string): Promise<Service[]> {
+    return await this.db.select().from(services).where(eq(services.userId, userId));
+  }
+
+  async getService(id: string): Promise<Service | undefined> {
+    const result = await this.db.select().from(services).where(eq(services.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createService(service: InsertService & { userId: string }): Promise<Service> {
+    const result = await this.db.insert(services).values(service).returning();
+    return result[0];
+  }
+
+  async updateService(id: string, service: Partial<InsertService>): Promise<Service | undefined> {
+    const result = await this.db.update(services).set(service).where(eq(services.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteService(id: string): Promise<boolean> {
+    const result = await this.db.delete(services).where(eq(services.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Package operations
+  async getPackages(userId: string): Promise<Package[]> {
+    return await this.db.select().from(packages).where(eq(packages.userId, userId));
+  }
+
+  async getPackage(id: string): Promise<Package | undefined> {
+    const result = await this.db.select().from(packages).where(eq(packages.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createPackage(packageData: InsertPackage & { userId: string }): Promise<Package> {
+    const result = await this.db.insert(packages).values(packageData).returning();
+    return result[0];
+  }
+
+  async updatePackage(id: string, packageData: Partial<InsertPackage>): Promise<Package | undefined> {
+    const result = await this.db.update(packages).set(packageData).where(eq(packages.id, id)).returning();
+    return result[0];
+  }
+
+  async deletePackage(id: string): Promise<boolean> {
+    const result = await this.db.delete(packages).where(eq(packages.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Company Profile operations
+  async getCompanyProfiles(userId: string): Promise<CompanyProfile[]> {
+    return await this.db.select().from(companyProfiles).where(eq(companyProfiles.userId, userId));
+  }
+
+  async getCompanyProfile(id: string): Promise<CompanyProfile | undefined> {
+    const result = await this.db.select().from(companyProfiles).where(eq(companyProfiles.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createCompanyProfile(profile: InsertCompanyProfile & { userId: string }): Promise<CompanyProfile> {
+    const result = await this.db.insert(companyProfiles).values(profile).returning();
+    return result[0];
+  }
+
+  async updateCompanyProfile(id: string, profile: Partial<InsertCompanyProfile>): Promise<CompanyProfile | undefined> {
+    const result = await this.db.update(companyProfiles).set(profile).where(eq(companyProfiles.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteCompanyProfile(id: string): Promise<boolean> {
+    const result = await this.db.delete(companyProfiles).where(eq(companyProfiles.id, id)).returning();
     return result.length > 0;
   }
 }

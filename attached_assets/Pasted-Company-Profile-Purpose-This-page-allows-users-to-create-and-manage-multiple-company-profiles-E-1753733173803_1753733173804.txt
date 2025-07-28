@@ -1,0 +1,100 @@
+Company Profile
+🧩 Purpose:
+This page allows users to create and manage multiple company profiles. Each profile includes essential company details such as name, email, address, and logo. Users can upload a company logo of any size, which the system automatically resizes to a fixed dimension for consistency. Additionally, users can create and add any number of custom fields to tailor company information to their specific needs (e.g., phone number, website, tax ID).
+
+🖥️ UI Layout Design:
+📌 1. Page Header
+Title: “Company Profile”
+
+Positioned top-left
+
+Short description below:
+“Create and manage multiple company profiles with customizable fields.”
+
+📋 Section A: Company Profiles List
+Display all created company profiles in a list or card layout
+
+Each profile shows:
+
+Company logo (thumbnail, fixed size)
+
+Company name
+
+Primary contact email or other key info (optional)
+
+Buttons per profile:
+
+✏️ Edit Profile
+
+🗑️ Delete Profile
+
+➕ Section B: Add / Edit Company Profile Form
+Form Fields:
+
+Company Name (text input)
+
+Email (email input)
+
+Address (multi-line text input)
+
+Company Logo Upload:
+
+Upload button allowing any image size/type
+
+System automatically resizes the uploaded logo to a fixed dimension (e.g., 150x150 px)
+
+Preview of uploaded/resized logo shown
+
+Custom Fields Section:
+
+Users can add any number of custom fields
+
+For each custom field:
+
+Field Name (text input, e.g., “Phone Number”)
+
+Field Value (text input)
+
+Button to Add New Custom Field
+
+Ability to remove any custom field
+
+Save Profile button to create or update the profile
+
+💾 Database Connectivity & Data Persistence
+When creating, updating, or deleting a company profile, send all profile data (including custom fields and logo metadata) to the database.
+
+Fetch the list of company profiles from the database on page load to display existing profiles.
+
+Uploaded logos should be stored either in the database as a URL or in a file storage system connected to the database.
+
+Ensure all data updates maintain consistency, and deleted profiles are removed from the database.
+
+🧠 Behavior & Validation
+Uploaded logo images of any size are resized automatically to maintain consistent display sizes across the app.
+
+Custom fields are fully editable and flexible — users define field names and input values.
+
+Company name and email fields are required; address and custom fields are optional.
+
+When editing, previously added custom fields are displayed and editable.
+
+📱 Responsive Design
+Profiles list stacks vertically on smaller screens
+
+Add/Edit form inputs are full width on mobile
+
+Logo upload preview scales proportionally
+
+Custom fields are displayed in a scrollable or collapsible area if many
+
+🎨 Styling Notes
+Use clean cards or list rows with the company logo visible for easy identification
+
+Form fields have consistent spacing and rounded borders
+
+Logo upload button with icon and hover effect
+
+Buttons styled as primary action buttons
+
+Custom fields section visually separated with subtle borders or shading

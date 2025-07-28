@@ -2,7 +2,7 @@ import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertUserSchema, insertInvoiceSchema, signupUserSchema, loginUserSchema, resetPasswordSchema } from "@shared/schema";
+import { insertUserSchema, insertInvoiceSchema, signupUserSchema, loginUserSchema, resetPasswordSchema, insertServiceSchema, insertPackageSchema, insertCompanyProfileSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import session from "express-session";
 
@@ -408,6 +408,183 @@ export function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting invoice:", error);
       res.status(500).json({ error: "Failed to delete invoice" });
+    }
+  });
+
+  // Services Routes
+  app.get("/api/services", requireAuth, async (req: any, res) => {
+    try {
+      const services = await storage.getServices(req.session.userId);
+      res.json(services);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+      res.status(500).json({ error: "Failed to fetch services" });
+    }
+  });
+
+  app.post("/api/services", requireAuth, async (req: any, res) => {
+    try {
+      const validatedData = insertServiceSchema.parse(req.body);
+      const service = await storage.createService({
+        ...validatedData,
+        userId: req.session.userId,
+      });
+      res.status(201).json(service);
+    } catch (error) {
+      console.error("Error creating service:", error);
+      res.status(500).json({ error: "Failed to create service" });
+    }
+  });
+
+  app.put("/api/services/:id", requireAuth, async (req: any, res) => {
+    try {
+      const service = await storage.getService(req.params.id);
+      if (!service || service.userId !== req.session.userId) {
+        return res.status(404).json({ error: "Service not found" });
+      }
+
+      const validatedData = insertServiceSchema.partial().parse(req.body);
+      const updatedService = await storage.updateService(req.params.id, validatedData);
+      res.json(updatedService);
+    } catch (error) {
+      console.error("Error updating service:", error);
+      res.status(500).json({ error: "Failed to update service" });
+    }
+  });
+
+  app.delete("/api/services/:id", requireAuth, async (req: any, res) => {
+    try {
+      const service = await storage.getService(req.params.id);
+      if (!service || service.userId !== req.session.userId) {
+        return res.status(404).json({ error: "Service not found" });
+      }
+
+      const deleted = await storage.deleteService(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Service not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting service:", error);
+      res.status(500).json({ error: "Failed to delete service" });
+    }
+  });
+
+  // Packages Routes
+  app.get("/api/packages", requireAuth, async (req: any, res) => {
+    try {
+      const packages = await storage.getPackages(req.session.userId);
+      res.json(packages);
+    } catch (error) {
+      console.error("Error fetching packages:", error);
+      res.status(500).json({ error: "Failed to fetch packages" });
+    }
+  });
+
+  app.post("/api/packages", requireAuth, async (req: any, res) => {
+    try {
+      const validatedData = insertPackageSchema.parse(req.body);
+      const packageData = await storage.createPackage({
+        ...validatedData,
+        userId: req.session.userId,
+      });
+      res.status(201).json(packageData);
+    } catch (error) {
+      console.error("Error creating package:", error);
+      res.status(500).json({ error: "Failed to create package" });
+    }
+  });
+
+  app.put("/api/packages/:id", requireAuth, async (req: any, res) => {
+    try {
+      const packageData = await storage.getPackage(req.params.id);
+      if (!packageData || packageData.userId !== req.session.userId) {
+        return res.status(404).json({ error: "Package not found" });
+      }
+
+      const validatedData = insertPackageSchema.partial().parse(req.body);
+      const updatedPackage = await storage.updatePackage(req.params.id, validatedData);
+      res.json(updatedPackage);
+    } catch (error) {
+      console.error("Error updating package:", error);
+      res.status(500).json({ error: "Failed to update package" });
+    }
+  });
+
+  app.delete("/api/packages/:id", requireAuth, async (req: any, res) => {
+    try {
+      const packageData = await storage.getPackage(req.params.id);
+      if (!packageData || packageData.userId !== req.session.userId) {
+        return res.status(404).json({ error: "Package not found" });
+      }
+
+      const deleted = await storage.deletePackage(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Package not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting package:", error);
+      res.status(500).json({ error: "Failed to delete package" });
+    }
+  });
+
+  // Company Profiles Routes
+  app.get("/api/company-profiles", requireAuth, async (req: any, res) => {
+    try {
+      const profiles = await storage.getCompanyProfiles(req.session.userId);
+      res.json(profiles);
+    } catch (error) {
+      console.error("Error fetching company profiles:", error);
+      res.status(500).json({ error: "Failed to fetch company profiles" });
+    }
+  });
+
+  app.post("/api/company-profiles", requireAuth, async (req: any, res) => {
+    try {
+      const validatedData = insertCompanyProfileSchema.parse(req.body);
+      const profile = await storage.createCompanyProfile({
+        ...validatedData,
+        userId: req.session.userId,
+      });
+      res.status(201).json(profile);
+    } catch (error) {
+      console.error("Error creating company profile:", error);
+      res.status(500).json({ error: "Failed to create company profile" });
+    }
+  });
+
+  app.put("/api/company-profiles/:id", requireAuth, async (req: any, res) => {
+    try {
+      const profile = await storage.getCompanyProfile(req.params.id);
+      if (!profile || profile.userId !== req.session.userId) {
+        return res.status(404).json({ error: "Company profile not found" });
+      }
+
+      const validatedData = insertCompanyProfileSchema.partial().parse(req.body);
+      const updatedProfile = await storage.updateCompanyProfile(req.params.id, validatedData);
+      res.json(updatedProfile);
+    } catch (error) {
+      console.error("Error updating company profile:", error);
+      res.status(500).json({ error: "Failed to update company profile" });
+    }
+  });
+
+  app.delete("/api/company-profiles/:id", requireAuth, async (req: any, res) => {
+    try {
+      const profile = await storage.getCompanyProfile(req.params.id);
+      if (!profile || profile.userId !== req.session.userId) {
+        return res.status(404).json({ error: "Company profile not found" });
+      }
+
+      const deleted = await storage.deleteCompanyProfile(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Company profile not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting company profile:", error);
+      res.status(500).json({ error: "Failed to delete company profile" });
     }
   });
 

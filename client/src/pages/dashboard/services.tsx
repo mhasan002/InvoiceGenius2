@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,30 +10,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import { Plus, Edit, Trash2, DollarSign, Wrench, Package, X } from 'lucide-react';
-
-interface Service {
-  id: string;
-  name: string;
-  unitPrice: number;
-}
+import type { Service, Package as ServicePackage } from '@shared/schema';
 
 interface PackageService {
   name: string;
   quantity?: number;
 }
 
-interface Package {
-  id: string;
-  name: string;
-  price: number;
-  services: PackageService[];
-}
-
 export default function Services() {
   const [activeTab, setActiveTab] = useState('services');
-  const [services, setServices] = useState<Service[]>([]);
-  const [packages, setPackages] = useState<Package[]>([]);
+  const queryClient = useQueryClient();
   
   // Service form states
   const [serviceName, setServiceName] = useState('');
@@ -44,10 +33,102 @@ export default function Services() {
   const [packageName, setPackageName] = useState('');
   const [packagePrice, setPackagePrice] = useState('');
   const [packageServices, setPackageServices] = useState<PackageService[]>([{ name: '', quantity: undefined }]);
-  const [editingPackage, setEditingPackage] = useState<Package | null>(null);
+  const [editingPackage, setEditingPackage] = useState<ServicePackage | null>(null);
   const [packageDialogOpen, setPackageDialogOpen] = useState(false);
   
   const { toast } = useToast();
+
+  // Fetch services
+  const { data: services = [], isLoading: servicesLoading } = useQuery({
+    queryKey: ['/api/services'],
+    queryFn: () => fetch('/api/services', { credentials: 'include' }).then(res => res.json()),
+  });
+
+  // Fetch packages
+  const { data: packages = [], isLoading: packagesLoading } = useQuery({
+    queryKey: ['/api/packages'],
+    queryFn: () => fetch('/api/packages', { credentials: 'include' }).then(res => res.json()),
+  });
+
+  // Service mutations
+  const createServiceMutation = useMutation({
+    mutationFn: (data: { name: string; unitPrice: string }) =>
+      apiRequest('/api/services', 'POST', { name: data.name, unitPrice: data.unitPrice }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/services'] });
+      resetServiceForm();
+      setServiceDialogOpen(false);
+      toast({ title: "Success", description: "Service added successfully." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to add service.", variant: "destructive" });
+    },
+  });
+
+  const updateServiceMutation = useMutation({
+    mutationFn: (data: { id: string; name: string; unitPrice: string }) =>
+      apiRequest(`/api/services/${data.id}`, 'PUT', { name: data.name, unitPrice: data.unitPrice }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/services'] });
+      resetServiceForm();
+      setServiceDialogOpen(false);
+      toast({ title: "Success", description: "Service updated successfully." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update service.", variant: "destructive" });
+    },
+  });
+
+  const deleteServiceMutation = useMutation({
+    mutationFn: (id: string) => apiRequest(`/api/services/${id}`, 'DELETE'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/services'] });
+      toast({ title: "Success", description: "Service deleted successfully." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete service.", variant: "destructive" });
+    },
+  });
+
+  // Package mutations
+  const createPackageMutation = useMutation({
+    mutationFn: (data: { name: string; price: string; services: PackageService[] }) =>
+      apiRequest('/api/packages', 'POST', { name: data.name, price: data.price, services: data.services }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/packages'] });
+      resetPackageForm();
+      setPackageDialogOpen(false);
+      toast({ title: "Success", description: "Package created successfully." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create package.", variant: "destructive" });
+    },
+  });
+
+  const updatePackageMutation = useMutation({
+    mutationFn: (data: { id: string; name: string; price: string; services: PackageService[] }) =>
+      apiRequest(`/api/packages/${data.id}`, 'PUT', { name: data.name, price: data.price, services: data.services }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/packages'] });
+      resetPackageForm();
+      setPackageDialogOpen(false);
+      toast({ title: "Success", description: "Package updated successfully." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update package.", variant: "destructive" });
+    },
+  });
+
+  const deletePackageMutation = useMutation({
+    mutationFn: (id: string) => apiRequest(`/api/packages/${id}`, 'DELETE'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/packages'] });
+      toast({ title: "Success", description: "Package deleted successfully." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete package.", variant: "destructive" });
+    },
+  });
 
   // Service management functions
   const handleAddService = () => {
@@ -60,18 +141,9 @@ export default function Services() {
       return;
     }
 
-    const newService: Service = {
-      id: Date.now().toString(),
+    createServiceMutation.mutate({
       name: serviceName.trim(),
-      unitPrice: parseFloat(servicePrice)
-    };
-
-    setServices(prev => [...prev, newService]);
-    resetServiceForm();
-    setServiceDialogOpen(false);
-    toast({
-      title: "Success",
-      description: "Service added successfully."
+      unitPrice: servicePrice
     });
   };
 
@@ -93,26 +165,16 @@ export default function Services() {
     }
 
     if (editingService) {
-      setServices(prev => prev.map(s => 
-        s.id === editingService.id 
-          ? { ...s, name: serviceName.trim(), unitPrice: parseFloat(servicePrice) }
-          : s
-      ));
-      resetServiceForm();
-      setServiceDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "Service updated successfully."
+      updateServiceMutation.mutate({
+        id: editingService.id,
+        name: serviceName.trim(),
+        unitPrice: servicePrice
       });
     }
   };
 
   const handleDeleteService = (id: string) => {
-    setServices(prev => prev.filter(s => s.id !== id));
-    toast({
-      title: "Success",
-      description: "Service deleted successfully."
-    });
+    deleteServiceMutation.mutate(id);
   };
 
   const resetServiceForm = () => {
@@ -142,30 +204,21 @@ export default function Services() {
       return;
     }
 
-    const newPackage: Package = {
-      id: Date.now().toString(),
+    createPackageMutation.mutate({
       name: packageName.trim(),
-      price: parseFloat(packagePrice),
+      price: packagePrice,
       services: validServices.map(s => ({
         name: s.name.trim(),
         quantity: s.quantity && s.quantity > 0 ? s.quantity : undefined
       }))
-    };
-
-    setPackages(prev => [...prev, newPackage]);
-    resetPackageForm();
-    setPackageDialogOpen(false);
-    toast({
-      title: "Success",
-      description: "Package created successfully."
     });
   };
 
-  const handleEditPackage = (pkg: Package) => {
+  const handleEditPackage = (pkg: ServicePackage) => {
     setEditingPackage(pkg);
     setPackageName(pkg.name);
     setPackagePrice(pkg.price.toString());
-    setPackageServices([...pkg.services, { name: '', quantity: undefined }]);
+    setPackageServices([...(pkg.services as PackageService[]), { name: '', quantity: undefined }]);
     setPackageDialogOpen(true);
   };
 
@@ -190,34 +243,20 @@ export default function Services() {
     }
 
     if (editingPackage) {
-      setPackages(prev => prev.map(p => 
-        p.id === editingPackage.id 
-          ? {
-              ...p,
-              name: packageName.trim(),
-              price: parseFloat(packagePrice),
-              services: validServices.map(s => ({
-                name: s.name.trim(),
-                quantity: s.quantity && s.quantity > 0 ? s.quantity : undefined
-              }))
-            }
-          : p
-      ));
-      resetPackageForm();
-      setPackageDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "Package updated successfully."
+      updatePackageMutation.mutate({
+        id: editingPackage.id,
+        name: packageName.trim(),
+        price: packagePrice,
+        services: validServices.map(s => ({
+          name: s.name.trim(),
+          quantity: s.quantity && s.quantity > 0 ? s.quantity : undefined
+        }))
       });
     }
   };
 
   const handleDeletePackage = (id: string) => {
-    setPackages(prev => prev.filter(p => p.id !== id));
-    toast({
-      title: "Success",
-      description: "Package deleted successfully."
-    });
+    deletePackageMutation.mutate(id);
   };
 
   const resetPackageForm = () => {
@@ -322,7 +361,13 @@ export default function Services() {
             </div>
 
             {/* Services Table */}
-            {services.length > 0 ? (
+            {servicesLoading ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <div className="text-gray-400 mb-4">Loading services...</div>
+                </CardContent>
+              </Card>
+            ) : services.length > 0 ? (
               <Card>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
@@ -341,13 +386,13 @@ export default function Services() {
                         </tr>
                       </thead>
                       <tbody>
-                        {services.map((service) => (
+                        {services.map((service: Service) => (
                           <tr key={service.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                             <td className="py-4 px-6 font-medium text-gray-900 dark:text-white">
                               {service.name}
                             </td>
                             <td className="py-4 px-6 text-gray-700 dark:text-gray-300">
-                              ${service.unitPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              ${parseFloat(service.unitPrice).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                             </td>
                             <td className="py-4 px-6">
                               <div className="flex space-x-2">
@@ -509,16 +554,22 @@ export default function Services() {
             </div>
 
             {/* Packages Grid */}
-            {packages.length > 0 ? (
+            {packagesLoading ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <div className="text-gray-400 mb-4">Loading packages...</div>
+                </CardContent>
+              </Card>
+            ) : packages.length > 0 ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {packages.map((pkg) => (
+                {packages.map((pkg: ServicePackage) => (
                   <Card key={pkg.id} className="hover:shadow-md transition-shadow">
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div>
                           <CardTitle className="text-lg">{pkg.name}</CardTitle>
                           <p className="text-lg font-semibold text-primary mt-1">
-                            ${pkg.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            ${parseFloat(pkg.price).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                           </p>
                         </div>
                         <div className="flex space-x-1">
@@ -562,7 +613,7 @@ export default function Services() {
                           Included Services:
                         </h4>
                         <div className="space-y-1">
-                          {pkg.services.map((service, index) => (
+                          {(pkg.services as PackageService[]).map((service, index) => (
                             <div key={index} className="flex items-center justify-between text-sm">
                               <span className="text-gray-600 dark:text-gray-400">
                                 {service.name}
