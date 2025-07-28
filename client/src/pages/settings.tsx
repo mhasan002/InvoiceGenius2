@@ -25,16 +25,28 @@ export default function Settings() {
 
   // Save database configuration mutation
   const saveDatabaseMutation = useMutation({
-    mutationFn: (connectionString: string) => 
-      apiRequest('/api/config/database', {
+    mutationFn: async (connectionString: string) => {
+      const response = await fetch('/api/config/database', {
         method: 'POST',
-        body: { connectionString }
-      }),
-    onSuccess: () => {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ connectionString }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save database configuration');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
       toast({
         title: "Success",
-        description: "Database connection saved successfully!",
+        description: "Supabase database connected successfully!",
       });
+      // Refetch the status to show updated connection
+      window.location.reload();
     },
     onError: () => {
       toast({
@@ -88,31 +100,43 @@ export default function Settings() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">How to get your Supabase connection string:</h3>
-              <ol className="list-decimal list-inside space-y-1 text-sm text-blue-800">
-                <li>Go to the <a href="https://supabase.com/dashboard/projects" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-600">Supabase dashboard</a></li>
-                <li>Create a new project if you haven't already</li>
-                <li>Once in the project page, click the "Connect" button on the top toolbar</li>
-                <li>Copy URI value under "Connection string" → "Transaction pooler"</li>
-                <li>Replace [YOUR-PASSWORD] with the database password you set for the project</li>
-              </ol>
+              <h3 className="font-semibold text-blue-900 mb-2">🚀 Connect Your Supabase Database</h3>
+              <div className="text-sm text-blue-800 space-y-2">
+                <p><strong>Step-by-step guide:</strong></p>
+                <ol className="list-decimal list-inside space-y-1 ml-2">
+                  <li>Go to the <a href="https://supabase.com/dashboard/projects" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-600 font-medium">Supabase dashboard</a></li>
+                  <li>Create a new project (choose a region close to you)</li>
+                  <li>Wait for your project to be ready (2-3 minutes)</li>
+                  <li>Click the <code className="bg-blue-200 px-1 py-0.5 rounded text-xs">Connect</code> button in the top toolbar</li>
+                  <li>Under "Connection string" → "Transaction pooler", copy the URI</li>
+                  <li>Replace <code className="bg-blue-200 px-1 py-0.5 rounded text-xs">[YOUR-PASSWORD]</code> with your database password</li>
+                </ol>
+                <div className="mt-3 p-2 bg-blue-100 rounded text-xs">
+                  <strong>Example:</strong> <code>postgresql://postgres.xxxxx:[YOUR-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres</code>
+                </div>
+              </div>
               {dbStatus && (
                 <div className="mt-4 p-3 bg-white rounded border">
-                  <p className="text-sm">
-                    <strong>Status:</strong> {" "}
-                    <span className={dbStatus.connected ? "text-green-600" : "text-red-600"}>
-                      {dbStatus.connected ? "Connected" : "Not Connected"}
-                    </span>
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${dbStatus.connected ? "bg-green-500" : "bg-red-500"}`}></div>
+                    <p className="text-sm">
+                      <strong>Status:</strong> {" "}
+                      <span className={dbStatus.connected ? "text-green-600" : "text-red-600"}>
+                        {dbStatus.connected ? "✅ Connected to Supabase" : "❌ Not Connected"}
+                      </span>
+                    </p>
+                  </div>
                   {dbStatus.hasUrl && (
-                    <p className="text-sm text-gray-600 mt-1">Database URL is configured</p>
+                    <p className="text-sm text-gray-600 mt-1">Database URL is configured and ready to use</p>
                   )}
                 </div>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="database-url">Supabase Connection String</Label>
+              <Label htmlFor="database-url" className="text-base font-medium">
+                Supabase Connection String *
+              </Label>
               <div className="relative">
                 <Input
                   id="database-url"
@@ -120,7 +144,7 @@ export default function Settings() {
                   placeholder="postgresql://postgres.xxxxx:[YOUR-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
                   value={databaseUrl}
                   onChange={(e) => setDatabaseUrl(e.target.value)}
-                  className="pr-10"
+                  className="pr-10 text-sm"
                   data-testid="input-database-url"
                 />
                 <Button
@@ -134,9 +158,13 @@ export default function Settings() {
                   {showUrl ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
-              <p className="text-sm text-gray-500">
-                Your connection string will be securely stored and used to connect to your Supabase database
-              </p>
+              <div className="flex items-start gap-2 text-sm text-gray-600">
+                <div className="w-1 h-1 bg-gray-400 rounded-full mt-2 flex-shrink-0"></div>
+                <p>
+                  Your connection string is securely stored and used to connect to your Supabase database. 
+                  This enables invoice storage, user authentication, and data persistence.
+                </p>
+              </div>
             </div>
 
             <Button

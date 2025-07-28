@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Rocket, LogIn, CheckCircle } from "lucide-react";
+import { Rocket, LogIn, CheckCircle, Settings } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "wouter";
 
 export default function HeroSection() {
   const handleGetStarted = () => {
@@ -51,14 +52,29 @@ export default function HeroSection() {
                 Login
               </Button>
             </div>
-            <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-6 text-gray-500 text-sm">
-              <div className="flex items-center">
-                <CheckCircle className="text-green-500 mr-2 h-4 w-4" />
-                <span>No credit card required</span>
+            <div className="mt-8 space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 text-gray-500 text-sm">
+                <div className="flex items-center">
+                  <CheckCircle className="text-green-500 mr-2 h-4 w-4" />
+                  <span>No credit card required</span>
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle className="text-green-500 mr-2 h-4 w-4" />
+                  <span>Free forever plan</span>
+                </div>
               </div>
-              <div className="flex items-center">
-                <CheckCircle className="text-green-500 mr-2 h-4 w-4" />
-                <span>Free forever plan</span>
+              <div className="pt-2">
+                <Link href="/settings">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-gray-600 hover:text-primary border-gray-200 hover:border-primary"
+                    data-testid="button-setup-database"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Connect Supabase Database
+                  </Button>
+                </Link>
               </div>
             </div>
           </motion.div>
