@@ -5,6 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import Settings from "@/pages/settings";
+import Login from "@/pages/auth/login";
+import SignUp from "@/pages/auth/signup";
+import ForgotPassword from "@/pages/auth/forgot-password";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -12,6 +15,9 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/settings" component={Settings} />
+      <Route path="/auth/login" component={Login} />
+      <Route path="/auth/signup" component={SignUp} />
+      <Route path="/auth/forgot-password" component={ForgotPassword} />
       <Route component={NotFound} />
     </Switch>
   );

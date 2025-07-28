@@ -27,13 +27,11 @@ export default function Navigation() {
   };
 
   const handleLogin = () => {
-    // TODO: Implement login functionality
-    console.log("Login clicked");
+    window.location.href = "/auth/login";
   };
 
   const handleSignup = () => {
-    // TODO: Implement signup functionality
-    console.log("Get Started clicked");
+    window.location.href = "/auth/signup";
   };
 
   return (
