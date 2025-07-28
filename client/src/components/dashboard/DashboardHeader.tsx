@@ -28,7 +28,7 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 lg:pl-72">
+    <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Page Title */}
         <div className="min-w-0 flex-1">

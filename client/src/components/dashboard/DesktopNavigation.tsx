@@ -1,8 +1,5 @@
-import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { 
   FileText, 
@@ -14,18 +11,16 @@ import {
   Plus, 
   FileSpreadsheet, 
   Users, 
-  Settings,
-  Menu,
-  X
+  Settings
 } from 'lucide-react';
 
-interface SidebarItem {
+interface NavigationItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
 }
 
-const sidebarItems: SidebarItem[] = [
+const navigationItems: NavigationItem[] = [
   {
     title: 'Total Insights',
     href: '/dashboard',
@@ -73,21 +68,17 @@ const sidebarItems: SidebarItem[] = [
   },
 ];
 
-interface SidebarProps {
-  className?: string;
-}
-
-export function DashboardSidebar({ className }: SidebarProps) {
+export function DesktopNavigation() {
   const [location] = useLocation();
 
-  const SidebarContent = () => (
-    <div className="flex h-full flex-col">
+  return (
+    <div className="hidden lg:block w-64 bg-gray-900 text-white min-h-screen">
       {/* Logo */}
-      <div className="flex h-16 items-center px-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex h-16 items-center px-6 border-b border-gray-700">
         <Link href="/">
           <div className="flex items-center cursor-pointer hover:opacity-80 transition-opacity">
             <FileText className="h-8 w-8 text-primary mr-3" />
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-xl font-bold text-white">
               InvoiceGen
             </h1>
           </div>
@@ -95,9 +86,9 @@ export function DashboardSidebar({ className }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <ScrollArea className="flex-1 px-3 py-4">
-        <nav className="space-y-1">
-          {sidebarItems.map((item) => {
+      <nav className="mt-8 px-4">
+        <div className="space-y-2">
+          {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.href || 
               (item.href !== '/dashboard' && location.startsWith(item.href));
@@ -107,10 +98,10 @@ export function DashboardSidebar({ className }: SidebarProps) {
                 <Button
                   variant="ghost"
                   className={cn(
-                    "w-full justify-start px-3 py-2.5 h-auto font-medium text-sm transition-all duration-200",
+                    "w-full justify-start px-4 py-3 h-auto font-medium text-sm transition-all duration-200 rounded-lg",
                     isActive
-                      ? "bg-primary/10 text-primary border-r-2 border-primary hover:bg-primary/15"
-                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "text-gray-300 hover:bg-gray-800 hover:text-white"
                   )}
                 >
                   <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
@@ -119,35 +110,8 @@ export function DashboardSidebar({ className }: SidebarProps) {
               </Link>
             );
           })}
-        </nav>
-      </ScrollArea>
+        </div>
+      </nav>
     </div>
-  );
-
-  return (
-    <>
-      {/* Desktop - No Sidebar, Content Fixed Left */}
-      <div className="hidden lg:block">
-        {/* Navigation will be integrated into the main layout */}
-      </div>
-
-      {/* Mobile Sidebar */}
-      <div className="lg:hidden">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="fixed top-4 left-4 z-50 bg-white dark:bg-gray-900 shadow-md border border-gray-200 dark:border-gray-700"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0 bg-white dark:bg-gray-900">
-            <SidebarContent />
-          </SheetContent>
-        </Sheet>
-      </div>
-    </>
   );
 }

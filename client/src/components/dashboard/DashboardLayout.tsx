@@ -1,4 +1,5 @@
 import { DashboardSidebar } from './DashboardSidebar';
+import { DesktopNavigation } from './DesktopNavigation';
 import { DashboardHeader } from './DashboardHeader';
 
 interface DashboardLayoutProps {
@@ -10,20 +11,25 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, title, description }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      {/* Sidebar */}
+      {/* Mobile Sidebar */}
       <DashboardSidebar />
       
-      {/* Main Content */}
-      <div className="lg:pl-64">
-        {/* Header */}
-        <DashboardHeader title={title} description={description} />
+      <div className="lg:flex">
+        {/* Desktop Navigation - Fixed Left */}
+        <DesktopNavigation />
         
-        {/* Page Content */}
-        <main className="p-6">
-          <div className="mx-auto max-w-7xl">
-            {children}
-          </div>
-        </main>
+        {/* Main Content */}
+        <div className="flex-1 lg:flex lg:flex-col">
+          {/* Header */}
+          <DashboardHeader title={title} description={description} />
+          
+          {/* Page Content */}
+          <main className="flex-1 p-6">
+            <div className="mx-auto max-w-7xl">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );
