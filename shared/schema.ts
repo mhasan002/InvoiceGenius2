@@ -142,3 +142,25 @@ export type InsertCompanyProfile = z.infer<typeof insertCompanyProfileSchema>;
 export type CompanyProfile = typeof companyProfiles.$inferSelect;
 export type InsertPaymentMethod = z.infer<typeof insertPaymentMethodSchema>;
 export type PaymentMethod = typeof paymentMethods.$inferSelect;
+
+// Templates table
+export const templates = pgTable("templates", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  isDefault: text("is_default").default("false"),
+  config: jsonb("config").notNull(), // Stores TemplateConfig as JSON
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertTemplateSchema = createInsertSchema(templates).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertTemplate = z.infer<typeof insertTemplateSchema>;
+export type Template = typeof templates.$inferSelect;

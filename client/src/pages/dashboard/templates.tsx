@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Palette, Settings, Eye, Save, Download } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { FileText, Palette, Settings, Eye, Save, Download, Plus, X } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { type Template } from "@shared/schema";
 
 interface TemplateField {
   id: string;
@@ -33,6 +38,8 @@ interface TemplateConfig {
   fields: TemplateField[];
   showNotes: boolean;
   showTerms: boolean;
+  notes: string;
+  terms: string;
   customFields: Array<{ name: string; value: string }>;
 }
 
@@ -49,6 +56,8 @@ const defaultTemplates: TemplateConfig[] = [
     logoVisible: true,
     showNotes: true,
     showTerms: true,
+    notes: "PLEASE SEND REMITTANCE TO:\nHELLO@REALLYGREATSITE.COM\n\nPAYMENT IS REQUIRED WITHIN 10\nBUSINESS DAYS OF INVOICE DATE.",
+    terms: "Payment terms and conditions apply. Late payments may incur additional fees.",
     fields: [
       { id: "itemDescription", name: "itemDescription", label: "Item Description", visible: true },
       { id: "price", name: "price", label: "Price", visible: true },
@@ -69,6 +78,8 @@ const defaultTemplates: TemplateConfig[] = [
     logoVisible: true,
     showNotes: true,
     showTerms: false,
+    notes: "Thank you for your business!",
+    terms: "",
     fields: [
       { id: "description", name: "description", label: "Description", visible: true },
       { id: "unitPrice", name: "unitPrice", label: "Unit Price", visible: true },
@@ -83,6 +94,48 @@ export default function Templates() {
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateConfig | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<TemplateConfig | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
+  const { toast } = useToast();
+
+  // Fetch templates from database
+  const { data: templates = [], isLoading } = useQuery({
+    queryKey: ['/api/templates'],
+    queryFn: () => fetch('/api/templates', { credentials: 'include' }).then(res => res.json()),
+  });
+
+  // Mutations for template operations
+  const createMutation = useMutation({
+    mutationFn: (template: any) => apiRequest('POST', '/api/templates', template),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/templates'] });
+      toast({ title: "Template saved successfully!" });
+    },
+    onError: () => {
+      toast({ title: "Failed to save template", variant: "destructive" });
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, ...template }: any) => apiRequest('PUT', `/api/templates/${id}`, template),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/templates'] });
+      toast({ title: "Template updated successfully!" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update template", variant: "destructive" });
+    }
+  });
+
+  const setDefaultMutation = useMutation({
+    mutationFn: (id: string) => apiRequest('POST', `/api/templates/${id}/set-default`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/templates'] });
+      toast({ title: "Template set as default!" });
+      setSelectedTemplate(null);
+    },
+    onError: () => {
+      toast({ title: "Failed to set default template", variant: "destructive" });
+    }
+  });
 
   const handleSelectTemplate = (template: TemplateConfig) => {
     const clonedTemplate = { ...template, id: `${template.id}_${Date.now()}` };
@@ -120,6 +173,29 @@ export default function Templates() {
       const updatedFields = editingTemplate.customFields.filter((_, i) => i !== index);
       setEditingTemplate({ ...editingTemplate, customFields: updatedFields });
     }
+  };
+
+  const handleSaveTemplate = () => {
+    if (!editingTemplate) return;
+    
+    const templateData = {
+      name: editingTemplate.name,
+      description: editingTemplate.description,
+      config: editingTemplate
+    };
+
+    if (editingTemplate.id.includes('_')) {
+      // New template (has timestamp suffix)
+      createMutation.mutate(templateData);
+    } else {
+      // Existing template
+      updateMutation.mutate({ id: editingTemplate.id, ...templateData });
+    }
+  };
+
+  const handleUseTemplate = () => {
+    if (!editingTemplate) return;
+    setDefaultMutation.mutate(editingTemplate.id);
   };
 
   const ProfessionalPreview = ({ template }: { template: TemplateConfig }) => (
@@ -192,12 +268,16 @@ export default function Templates() {
             <span>$ 200.00</span>
           </div>
           <div className="flex justify-between py-2">
+            <span><strong>TAX (10%):</strong></span>
+            <span>$ 20.00</span>
+          </div>
+          <div className="flex justify-between py-2">
             <span><strong>PACKAGE DISCOUNT (0%):</strong></span>
             <span>$ 0.00</span>
           </div>
-          <div className="flex justify-between py-2 font-bold" style={{ backgroundColor: template.borderColor }}>
+          <div className="flex justify-between py-2 font-bold px-3 py-2" style={{ backgroundColor: template.borderColor }}>
             <span>TOTAL DUE</span>
-            <span>$ 200.00</span>
+            <span>$ 220.00</span>
           </div>
         </div>
       </div>
@@ -206,15 +286,20 @@ export default function Templates() {
       <div className="grid grid-cols-2 gap-8 mt-8">
         <div>
           {template.showNotes && (
-            <>
-              <h4 className="font-semibold mb-2">PLEASE SEND REMITTANCE TO:</h4>
-              <p className="text-sm">HELLO@REALLYGREATSITE.COM</p>
-              <br />
-              <p className="text-sm">
-                <strong>PAYMENT IS REQUIRED WITHIN 10</strong><br />
-                BUSINESS DAYS OF INVOICE DATE.
-              </p>
-            </>
+            <div className="text-sm">
+              <h4 className="font-semibold mb-2">NOTES:</h4>
+              <div className="whitespace-pre-line">
+                {template.notes || "PLEASE SEND REMITTANCE TO:\nHELLO@REALLYGREATSITE.COM\n\nPAYMENT IS REQUIRED WITHIN 10\nBUSINESS DAYS OF INVOICE DATE."}
+              </div>
+            </div>
+          )}
+          {template.showTerms && template.terms && (
+            <div className="text-sm mt-4">
+              <h4 className="font-semibold mb-2">TERMS & CONDITIONS:</h4>
+              <div className="whitespace-pre-line">
+                {template.terms}
+              </div>
+            </div>
           )}
         </div>
         <div className="text-right">
@@ -306,15 +391,15 @@ export default function Templates() {
             <div className="mt-6 ml-auto w-64">
               <hr className="mb-2" style={{ borderColor: template.primaryColor }} />
               <div className="text-right space-y-1">
-                <div className="flex justify-between">
+                <div className="flex justify-between py-1">
                   <span><strong>SUBTOTAL</strong></span>
                   <span>$400</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between py-1">
                   <span>Tax 10%</span>
-                  <span></span>
+                  <span>$40</span>
                 </div>
-                <div className="flex justify-between font-bold">
+                <div className="flex justify-between font-bold py-1">
                   <span><strong>TOTAL</strong></span>
                   <span>$440</span>
                 </div>
@@ -326,9 +411,19 @@ export default function Templates() {
           <div className="grid grid-cols-2 gap-8 mt-8">
             <div>
               {template.showNotes && (
-                <p className="text-lg font-medium">
-                  Thank you for your<br />business!
-                </p>
+                <div className="text-sm">
+                  <div className="whitespace-pre-line">
+                    {template.notes || "Thank you for your business!"}
+                  </div>
+                </div>
+              )}
+              {template.showTerms && template.terms && (
+                <div className="text-sm mt-4">
+                  <h4 className="font-semibold mb-2">Terms & Conditions:</h4>
+                  <div className="whitespace-pre-line">
+                    {template.terms}
+                  </div>
+                </div>
               )}
             </div>
             <div className="text-right">
@@ -360,35 +455,97 @@ export default function Templates() {
 
         {!selectedTemplate ? (
           /* Template Gallery */
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {defaultTemplates.map((template) => (
-              <Card key={template.id} className="cursor-pointer hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    {template.name}
-                  </CardTitle>
-                  <CardDescription>{template.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="aspect-[3/4] bg-gray-100 rounded-lg mb-4 overflow-hidden">
-                    <div className="transform scale-[0.3] origin-top-left w-[333%] h-[333%]">
-                      {template.id === "professional" ? (
-                        <ProfessionalPreview template={template} />
-                      ) : (
-                        <MinimalistPreview template={template} />
-                      )}
-                    </div>
-                  </div>
-                  <Button 
-                    onClick={() => handleSelectTemplate(template)}
-                    className="w-full"
-                  >
-                    Select Template
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="space-y-6">
+            {/* Default Templates */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">Default Templates</h2>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {defaultTemplates.map((template) => (
+                  <Card key={template.id} className="cursor-pointer hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        {template.name}
+                      </CardTitle>
+                      <CardDescription>{template.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="aspect-[3/4] bg-gray-100 rounded-lg mb-4 overflow-hidden">
+                        <div className="transform scale-[0.3] origin-top-left w-[333%] h-[333%]">
+                          {template.id === "professional" ? (
+                            <ProfessionalPreview template={template} />
+                          ) : (
+                            <MinimalistPreview template={template} />
+                          )}
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={() => handleSelectTemplate(template)}
+                        className="w-full"
+                      >
+                        Customize Template
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Saved Templates */}
+            {templates.length > 0 && (
+              <div>
+                <h2 className="text-lg font-semibold mb-4">Your Saved Templates</h2>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {templates.map((template: Template) => {
+                    const config = template.config as TemplateConfig;
+                    return (
+                      <Card key={template.id} className="cursor-pointer hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <FileText className="h-5 w-5" />
+                            {template.name}
+                            {template.isDefault === "true" && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Default</span>
+                            )}
+                          </CardTitle>
+                          <CardDescription>{template.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="aspect-[3/4] bg-gray-100 rounded-lg mb-4 overflow-hidden">
+                            <div className="transform scale-[0.3] origin-top-left w-[333%] h-[333%]">
+                              {config.id?.includes("professional") ? (
+                                <ProfessionalPreview template={config} />
+                              ) : (
+                                <MinimalistPreview template={config} />
+                              )}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Button 
+                              onClick={() => handleSelectTemplate(config)}
+                              className="w-full"
+                              variant="outline"
+                            >
+                              Edit Template
+                            </Button>
+                            {template.isDefault !== "true" && (
+                              <Button 
+                                onClick={() => setDefaultMutation.mutate(template.id)}
+                                disabled={setDefaultMutation.isPending}
+                                className="w-full"
+                                size="sm"
+                              >
+                                {setDefaultMutation.isPending ? "Setting..." : "Set as Default"}
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           /* Template Editor */
@@ -571,6 +728,30 @@ export default function Templates() {
                             onCheckedChange={(checked) => updateTemplate({ showTerms: checked })}
                           />
                         </div>
+
+                        {editingTemplate?.showNotes && (
+                          <div>
+                            <Label>Notes Content</Label>
+                            <Textarea
+                              value={editingTemplate?.notes || ""}
+                              onChange={(e) => updateTemplate({ notes: e.target.value })}
+                              placeholder="Enter notes content..."
+                              rows={4}
+                            />
+                          </div>
+                        )}
+
+                        {editingTemplate?.showTerms && (
+                          <div>
+                            <Label>Terms & Conditions</Label>
+                            <Textarea
+                              value={editingTemplate?.terms || ""}
+                              onChange={(e) => updateTemplate({ terms: e.target.value })}
+                              placeholder="Enter terms and conditions..."
+                              rows={4}
+                            />
+                          </div>
+                        )}
                       </div>
                     </TabsContent>
                   </Tabs>
@@ -583,9 +764,21 @@ export default function Templates() {
                     >
                       Back to Templates
                     </Button>
-                    <Button className="flex-1">
+                    <Button 
+                      onClick={handleSaveTemplate}
+                      disabled={createMutation.isPending || updateMutation.isPending}
+                      className="flex-1"
+                    >
                       <Save className="h-4 w-4 mr-2" />
-                      Save Template
+                      {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save Template"}
+                    </Button>
+                    <Button 
+                      onClick={handleUseTemplate}
+                      disabled={setDefaultMutation.isPending}
+                      variant="default"
+                      className="flex-1"
+                    >
+                      {setDefaultMutation.isPending ? "Setting..." : "Use This Template"}
                     </Button>
                   </div>
                 </ScrollArea>

@@ -10,12 +10,14 @@ import {
   type CompanyProfile, 
   type InsertCompanyProfile,
   type PaymentMethod,
-  type InsertPaymentMethod
+  type InsertPaymentMethod,
+  type Template,
+  type InsertTemplate
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { users, invoices, services, packages, companyProfiles, paymentMethods } from "@shared/schema";
+import { users, invoices, services, packages, companyProfiles, paymentMethods, templates } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
@@ -63,6 +65,14 @@ export interface IStorage {
   createPaymentMethod(method: InsertPaymentMethod & { userId: string }): Promise<PaymentMethod>;
   updatePaymentMethod(id: string, method: Partial<InsertPaymentMethod>): Promise<PaymentMethod | undefined>;
   deletePaymentMethod(id: string): Promise<boolean>;
+  
+  // Template operations
+  getTemplates(userId: string): Promise<Template[]>;
+  getTemplate(id: string): Promise<Template | undefined>;
+  createTemplate(template: InsertTemplate & { userId: string }): Promise<Template>;
+  updateTemplate(id: string, template: Partial<InsertTemplate>): Promise<Template | undefined>;
+  deleteTemplate(id: string): Promise<boolean>;
+  setDefaultTemplate(userId: string, templateId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -227,6 +237,44 @@ export class DatabaseStorage implements IStorage {
     const result = await this.db.delete(paymentMethods).where(eq(paymentMethods.id, id)).returning();
     return result.length > 0;
   }
+
+  // Template operations
+  async getTemplates(userId: string): Promise<Template[]> {
+    return await this.db.select().from(templates).where(eq(templates.userId, userId));
+  }
+
+  async getTemplate(id: string): Promise<Template | undefined> {
+    const result = await this.db.select().from(templates).where(eq(templates.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createTemplate(template: InsertTemplate & { userId: string }): Promise<Template> {
+    const result = await this.db.insert(templates).values(template).returning();
+    return result[0];
+  }
+
+  async updateTemplate(id: string, template: Partial<InsertTemplate>): Promise<Template | undefined> {
+    const result = await this.db.update(templates).set(template).where(eq(templates.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteTemplate(id: string): Promise<boolean> {
+    const result = await this.db.delete(templates).where(eq(templates.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async setDefaultTemplate(userId: string, templateId: string): Promise<boolean> {
+    try {
+      // First unset all defaults for this user
+      await this.db.update(templates).set({ isDefault: "false" }).where(eq(templates.userId, userId));
+      // Then set the new default
+      await this.db.update(templates).set({ isDefault: "true" }).where(eq(templates.id, templateId));
+      return true;
+    } catch (error) {
+      console.error('Error setting default template:', error);
+      return false;
+    }
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -346,6 +394,13 @@ export class MemStorage implements IStorage {
   async createPaymentMethod(): Promise<PaymentMethod> { throw new Error("Not implemented in MemStorage"); }
   async updatePaymentMethod(): Promise<PaymentMethod | undefined> { return undefined; }
   async deletePaymentMethod(): Promise<boolean> { return false; }
+
+  async getTemplates(): Promise<Template[]> { return []; }
+  async getTemplate(): Promise<Template | undefined> { return undefined; }
+  async createTemplate(): Promise<Template> { throw new Error("Not implemented in MemStorage"); }
+  async updateTemplate(): Promise<Template | undefined> { return undefined; }
+  async deleteTemplate(): Promise<boolean> { return false; }
+  async setDefaultTemplate(): Promise<boolean> { return false; }
 }
 
 // Use database storage if DATABASE_URL is configured, otherwise use memory storage

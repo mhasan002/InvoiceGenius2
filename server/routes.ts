@@ -2,7 +2,7 @@ import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertUserSchema, insertInvoiceSchema, signupUserSchema, loginUserSchema, resetPasswordSchema, insertServiceSchema, insertPackageSchema, insertCompanyProfileSchema, insertPaymentMethodSchema } from "@shared/schema";
+import { insertUserSchema, insertInvoiceSchema, signupUserSchema, loginUserSchema, resetPasswordSchema, insertServiceSchema, insertPackageSchema, insertCompanyProfileSchema, insertPaymentMethodSchema, insertTemplateSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import session from "express-session";
 
@@ -644,6 +644,83 @@ export function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting payment method:", error);
       res.status(500).json({ error: "Failed to delete payment method" });
+    }
+  });
+
+  // Template Routes
+  app.get("/api/templates", requireAuth, async (req: any, res) => {
+    try {
+      const templates = await storage.getTemplates(req.session.userId);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      res.status(500).json({ error: "Failed to fetch templates" });
+    }
+  });
+
+  app.post("/api/templates", requireAuth, async (req: any, res) => {
+    try {
+      const validatedData = insertTemplateSchema.parse(req.body);
+      const template = await storage.createTemplate({
+        ...validatedData,
+        userId: req.session.userId,
+      });
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Error creating template:", error);
+      res.status(500).json({ error: "Failed to create template" });
+    }
+  });
+
+  app.put("/api/templates/:id", requireAuth, async (req: any, res) => {
+    try {
+      const template = await storage.getTemplate(req.params.id);
+      if (!template || template.userId !== req.session.userId) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+
+      const validatedData = insertTemplateSchema.partial().parse(req.body);
+      const updatedTemplate = await storage.updateTemplate(req.params.id, validatedData);
+      res.json(updatedTemplate);
+    } catch (error) {
+      console.error("Error updating template:", error);
+      res.status(500).json({ error: "Failed to update template" });
+    }
+  });
+
+  app.delete("/api/templates/:id", requireAuth, async (req: any, res) => {
+    try {
+      const template = await storage.getTemplate(req.params.id);
+      if (!template || template.userId !== req.session.userId) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+
+      const deleted = await storage.deleteTemplate(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting template:", error);
+      res.status(500).json({ error: "Failed to delete template" });
+    }
+  });
+
+  app.post("/api/templates/:id/set-default", requireAuth, async (req: any, res) => {
+    try {
+      const template = await storage.getTemplate(req.params.id);
+      if (!template || template.userId !== req.session.userId) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+
+      const success = await storage.setDefaultTemplate(req.session.userId, req.params.id);
+      if (!success) {
+        return res.status(500).json({ error: "Failed to set default template" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error setting default template:", error);
+      res.status(500).json({ error: "Failed to set default template" });
     }
   });
 
