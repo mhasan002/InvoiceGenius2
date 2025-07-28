@@ -8,12 +8,14 @@ import {
   type Package, 
   type InsertPackage, 
   type CompanyProfile, 
-  type InsertCompanyProfile 
+  type InsertCompanyProfile,
+  type PaymentMethod,
+  type InsertPaymentMethod
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { users, invoices, services, packages, companyProfiles } from "@shared/schema";
+import { users, invoices, services, packages, companyProfiles, paymentMethods } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
@@ -54,6 +56,13 @@ export interface IStorage {
   createCompanyProfile(profile: InsertCompanyProfile & { userId: string }): Promise<CompanyProfile>;
   updateCompanyProfile(id: string, profile: Partial<InsertCompanyProfile>): Promise<CompanyProfile | undefined>;
   deleteCompanyProfile(id: string): Promise<boolean>;
+  
+  // Payment Method operations
+  getPaymentMethods(userId: string): Promise<PaymentMethod[]>;
+  getPaymentMethod(id: string): Promise<PaymentMethod | undefined>;
+  createPaymentMethod(method: InsertPaymentMethod & { userId: string }): Promise<PaymentMethod>;
+  updatePaymentMethod(id: string, method: Partial<InsertPaymentMethod>): Promise<PaymentMethod | undefined>;
+  deletePaymentMethod(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -193,6 +202,31 @@ export class DatabaseStorage implements IStorage {
     const result = await this.db.delete(companyProfiles).where(eq(companyProfiles.id, id)).returning();
     return result.length > 0;
   }
+
+  // Payment Method operations
+  async getPaymentMethods(userId: string): Promise<PaymentMethod[]> {
+    return await this.db.select().from(paymentMethods).where(eq(paymentMethods.userId, userId));
+  }
+
+  async getPaymentMethod(id: string): Promise<PaymentMethod | undefined> {
+    const result = await this.db.select().from(paymentMethods).where(eq(paymentMethods.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createPaymentMethod(method: InsertPaymentMethod & { userId: string }): Promise<PaymentMethod> {
+    const result = await this.db.insert(paymentMethods).values(method).returning();
+    return result[0];
+  }
+
+  async updatePaymentMethod(id: string, method: Partial<InsertPaymentMethod>): Promise<PaymentMethod | undefined> {
+    const result = await this.db.update(paymentMethods).set(method).where(eq(paymentMethods.id, id)).returning();
+    return result[0];
+  }
+
+  async deletePaymentMethod(id: string): Promise<boolean> {
+    const result = await this.db.delete(paymentMethods).where(eq(paymentMethods.id, id)).returning();
+    return result.length > 0;
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -287,6 +321,31 @@ export class MemStorage implements IStorage {
   async deleteInvoice(id: string): Promise<boolean> {
     return this.invoices.delete(id);
   }
+
+  // Stub implementations for services, packages, company profiles, and payment methods
+  async getServices(): Promise<Service[]> { return []; }
+  async getService(): Promise<Service | undefined> { return undefined; }
+  async createService(): Promise<Service> { throw new Error("Not implemented in MemStorage"); }
+  async updateService(): Promise<Service | undefined> { return undefined; }
+  async deleteService(): Promise<boolean> { return false; }
+
+  async getPackages(): Promise<Package[]> { return []; }
+  async getPackage(): Promise<Package | undefined> { return undefined; }
+  async createPackage(): Promise<Package> { throw new Error("Not implemented in MemStorage"); }
+  async updatePackage(): Promise<Package | undefined> { return undefined; }
+  async deletePackage(): Promise<boolean> { return false; }
+
+  async getCompanyProfiles(): Promise<CompanyProfile[]> { return []; }
+  async getCompanyProfile(): Promise<CompanyProfile | undefined> { return undefined; }
+  async createCompanyProfile(): Promise<CompanyProfile> { throw new Error("Not implemented in MemStorage"); }
+  async updateCompanyProfile(): Promise<CompanyProfile | undefined> { return undefined; }
+  async deleteCompanyProfile(): Promise<boolean> { return false; }
+
+  async getPaymentMethods(): Promise<PaymentMethod[]> { return []; }
+  async getPaymentMethod(): Promise<PaymentMethod | undefined> { return undefined; }
+  async createPaymentMethod(): Promise<PaymentMethod> { throw new Error("Not implemented in MemStorage"); }
+  async updatePaymentMethod(): Promise<PaymentMethod | undefined> { return undefined; }
+  async deletePaymentMethod(): Promise<boolean> { return false; }
 }
 
 // Use database storage if DATABASE_URL is configured, otherwise use memory storage

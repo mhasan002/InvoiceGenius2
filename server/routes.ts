@@ -2,7 +2,7 @@ import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertUserSchema, insertInvoiceSchema, signupUserSchema, loginUserSchema, resetPasswordSchema, insertServiceSchema, insertPackageSchema, insertCompanyProfileSchema } from "@shared/schema";
+import { insertUserSchema, insertInvoiceSchema, signupUserSchema, loginUserSchema, resetPasswordSchema, insertServiceSchema, insertPackageSchema, insertCompanyProfileSchema, insertPaymentMethodSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import session from "express-session";
 
@@ -585,6 +585,65 @@ export function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting company profile:", error);
       res.status(500).json({ error: "Failed to delete company profile" });
+    }
+  });
+
+  // Payment Methods Routes
+  app.get("/api/payment-methods", requireAuth, async (req: any, res) => {
+    try {
+      const methods = await storage.getPaymentMethods(req.session.userId);
+      res.json(methods);
+    } catch (error) {
+      console.error("Error fetching payment methods:", error);
+      res.status(500).json({ error: "Failed to fetch payment methods" });
+    }
+  });
+
+  app.post("/api/payment-methods", requireAuth, async (req: any, res) => {
+    try {
+      const validatedData = insertPaymentMethodSchema.parse(req.body);
+      const method = await storage.createPaymentMethod({
+        ...validatedData,
+        userId: req.session.userId,
+      });
+      res.status(201).json(method);
+    } catch (error) {
+      console.error("Error creating payment method:", error);
+      res.status(500).json({ error: "Failed to create payment method" });
+    }
+  });
+
+  app.put("/api/payment-methods/:id", requireAuth, async (req: any, res) => {
+    try {
+      const method = await storage.getPaymentMethod(req.params.id);
+      if (!method || method.userId !== req.session.userId) {
+        return res.status(404).json({ error: "Payment method not found" });
+      }
+
+      const validatedData = insertPaymentMethodSchema.partial().parse(req.body);
+      const updatedMethod = await storage.updatePaymentMethod(req.params.id, validatedData);
+      res.json(updatedMethod);
+    } catch (error) {
+      console.error("Error updating payment method:", error);
+      res.status(500).json({ error: "Failed to update payment method" });
+    }
+  });
+
+  app.delete("/api/payment-methods/:id", requireAuth, async (req: any, res) => {
+    try {
+      const method = await storage.getPaymentMethod(req.params.id);
+      if (!method || method.userId !== req.session.userId) {
+        return res.status(404).json({ error: "Payment method not found" });
+      }
+
+      const deleted = await storage.deletePaymentMethod(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Payment method not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting payment method:", error);
+      res.status(500).json({ error: "Failed to delete payment method" });
     }
   });
 

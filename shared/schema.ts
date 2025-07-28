@@ -54,6 +54,16 @@ export const companyProfiles = pgTable("company_profiles", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const paymentMethods = pgTable("payment_methods", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  type: varchar("type", { length: 50 }).notNull(), // 'bank', 'card', 'crypto', 'custom'
+  name: varchar("name", { length: 255 }).notNull(),
+  fields: jsonb("fields").notNull(), // Store all fields including predefined and custom
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -110,6 +120,13 @@ export const insertCompanyProfileSchema = createInsertSchema(companyProfiles).om
   updatedAt: true,
 });
 
+export const insertPaymentMethodSchema = createInsertSchema(paymentMethods).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
 export type SignupUser = z.infer<typeof signupUserSchema>;
@@ -123,3 +140,5 @@ export type InsertPackage = z.infer<typeof insertPackageSchema>;
 export type Package = typeof packages.$inferSelect;
 export type InsertCompanyProfile = z.infer<typeof insertCompanyProfileSchema>;
 export type CompanyProfile = typeof companyProfiles.$inferSelect;
+export type InsertPaymentMethod = z.infer<typeof insertPaymentMethodSchema>;
+export type PaymentMethod = typeof paymentMethods.$inferSelect;

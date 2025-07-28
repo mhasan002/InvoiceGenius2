@@ -38,7 +38,7 @@ const navigationItems: NavigationItem[] = [
   },
   {
     title: 'Payment Methods',
-    href: '/dashboard/payments',
+    href: '/dashboard/payment-methods',
     icon: CreditCard,
   },
   {
