@@ -30,9 +30,22 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      // For now, just simulate password reset since we don't have email functionality
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setSuccess(true);
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccess(true);
+      } else {
+        setError(data.message || "Failed to send reset link");
+      }
     } catch (err) {
       setError("Something went wrong. Please try again.");
     } finally {

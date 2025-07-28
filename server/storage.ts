@@ -1,7 +1,7 @@
 import { type User, type InsertUser, type Invoice, type InsertInvoice } from "@shared/schema";
 import { randomUUID } from "crypto";
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import { users, invoices } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
@@ -12,7 +12,9 @@ export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
   
   // Invoice operations
   getInvoices(userId?: string): Promise<Invoice[]>;
@@ -29,7 +31,7 @@ export class DatabaseStorage implements IStorage {
     if (!process.env.DATABASE_URL) {
       throw new Error("DATABASE_URL environment variable is required");
     }
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = postgres(process.env.DATABASE_URL);
     this.db = drizzle(sql);
   }
 
@@ -40,6 +42,16 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const result = await this.db.select().from(users).where(eq(users.email, email)).limit(1);
+    return result[0];
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0];
+  }
+
+  async updateUser(id: string, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const result = await this.db.update(users).set(userData).where(eq(users.id, id)).returning();
     return result[0];
   }
 
@@ -95,9 +107,32 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username,
+    );
+  }
+
+  async updateUser(id: string, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const existing = this.users.get(id);
+    if (!existing) return undefined;
+    
+    const updated = {
+      ...existing,
+      ...userData,
+    };
+    this.users.set(id, updated);
+    return updated;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id, createdAt: new Date() };
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      email: insertUser.email || null,
+      createdAt: new Date() 
+    };
     this.users.set(id, user);
     return user;
   }
@@ -119,6 +154,9 @@ export class MemStorage implements IStorage {
     const newInvoice: Invoice = {
       ...invoice,
       id,
+      userId: invoice.userId || null,
+      clientEmail: invoice.clientEmail || null,
+      status: invoice.status || "draft",
       createdAt: new Date(),
       updatedAt: new Date(),
     };

@@ -3,19 +3,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Eye, EyeOff, FileText, AlertCircle, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function SignUp() {
-  const [username, setUsername] = useState("");
+export default function ResetPassword() {
+  const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [success, setSuccess] = useState(false);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -26,35 +27,18 @@ export default function SignUp() {
     return password.length >= 6;
   };
 
-  const validateUsername = (username: string) => {
-    return username.length >= 3 && /^[a-zA-Z0-9_]+$/.test(username);
-  };
-
-  const getPasswordStrength = (password: string) => {
-    let strength = 0;
-    if (password.length >= 8) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/[a-z]/.test(password)) strength++;
-    if (/[0-9]/.test(password)) strength++;
-    if (/[^A-Za-z0-9]/.test(password)) strength++;
-    return strength;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
 
     // Validation
-    if (!validateUsername(username)) {
-      newErrors.username = "Username must be at least 3 characters and contain only letters, numbers, and underscores";
-    }
-    if (email && !validateEmail(email)) {
+    if (!validateEmail(email)) {
       newErrors.email = "Please enter a valid email address";
     }
-    if (!validatePassword(password)) {
-      newErrors.password = "Password must be at least 6 characters long";
+    if (!validatePassword(newPassword)) {
+      newErrors.newPassword = "Password must be at least 6 characters long";
     }
-    if (password !== confirmPassword) {
+    if (newPassword !== confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
 
@@ -67,22 +51,25 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/signup", {
+      const response = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, email, password, confirmPassword }),
+        body: JSON.stringify({ email, newPassword, confirmPassword }),
         credentials: "include",
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Registration successful, redirect to dashboard
-        window.location.href = "/dashboard";
+        setSuccess(true);
+        // Redirect to login after 3 seconds
+        setTimeout(() => {
+          setLocation("/auth/login");
+        }, 3000);
       } else {
-        setErrors({ general: data.message || "Registration failed" });
+        setErrors({ general: data.message || "Password reset failed" });
       }
     } catch (err) {
       setErrors({ general: "Something went wrong. Please try again." });
@@ -91,9 +78,50 @@ export default function SignUp() {
     }
   };
 
-  const passwordStrength = getPasswordStrength(password);
-  const strengthColors = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-blue-500", "bg-green-500"];
-  const strengthLabels = ["Very Weak", "Weak", "Fair", "Good", "Strong"];
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="sm:mx-auto sm:w-full sm:max-w-md"
+        >
+          <Link href="/">
+            <div className="flex justify-center items-center mb-6 cursor-pointer hover:opacity-80 transition-opacity">
+              <FileText className="text-primary mr-2 h-8 w-8" />
+              <h1 className="text-2xl font-bold text-gray-900">InvoiceGen</h1>
+            </div>
+          </Link>
+
+          <Card className="shadow-lg border-0">
+            <CardContent className="text-center py-8">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="space-y-6"
+              >
+                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0" />
+                  <span className="text-sm">Password reset successfully!</span>
+                </div>
+                
+                <div className="text-sm text-gray-600">
+                  <p>Your password has been updated. You'll be redirected to the login page in a few seconds.</p>
+                </div>
+
+                <Link href="/auth/login">
+                  <Button className="w-full bg-primary hover:bg-primary/90">
+                    Go to Login
+                  </Button>
+                </Link>
+              </motion.div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -113,10 +141,10 @@ export default function SignUp() {
         <Card className="shadow-lg border-0">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-semibold text-gray-900">
-              Create your account
+              Reset your password
             </CardTitle>
             <CardDescription className="text-gray-600">
-              Get started with your free invoice generator
+              Enter your email and new password
             </CardDescription>
           </CardHeader>
           
@@ -134,43 +162,19 @@ export default function SignUp() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-sm font-medium text-gray-700">
-                  Username
-                </Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="Choose a username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  className={`transition-all duration-200 focus:ring-2 focus:ring-primary/20 ${
-                    errors.username ? "border-red-300 focus:border-red-300 focus:ring-red-200" : ""
-                  }`}
-                  data-testid="input-username"
-                />
-                {errors.username && (
-                  <p className="text-sm text-red-600 flex items-center">
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    {errors.username}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                  Email address (optional)
+                  Email address
                 </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email (optional)"
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
                   className={`transition-all duration-200 focus:ring-2 focus:ring-primary/20 ${
                     errors.email ? "border-red-300 focus:border-red-300 focus:ring-red-200" : ""
                   }`}
-                  data-testid="input-email"
                 />
                 {errors.email && (
                   <p className="text-sm text-red-600 flex items-center">
@@ -181,21 +185,20 @@ export default function SignUp() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                  Password
+                <Label htmlFor="newPassword" className="text-sm font-medium text-gray-700">
+                  New password
                 </Label>
                 <div className="relative">
                   <Input
-                    id="password"
+                    id="newPassword"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Create a password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
                     required
                     className={`pr-10 transition-all duration-200 focus:ring-2 focus:ring-primary/20 ${
-                      errors.password ? "border-red-300 focus:border-red-300 focus:ring-red-200" : ""
+                      errors.newPassword ? "border-red-300 focus:border-red-300 focus:ring-red-200" : ""
                     }`}
-                    data-testid="input-password"
                   />
                   <Button
                     type="button"
@@ -203,52 +206,33 @@ export default function SignUp() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
-                    data-testid="button-toggle-password"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
-                {password && (
-                  <div className="space-y-2">
-                    <div className="flex space-x-1">
-                      {[...Array(5)].map((_, i) => (
-                        <div
-                          key={i}
-                          className={`h-1 w-full rounded-full transition-colors duration-300 ${
-                            i < passwordStrength ? strengthColors[passwordStrength - 1] : "bg-gray-200"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-600">
-                      Password strength: {strengthLabels[passwordStrength - 1] || "Very Weak"}
-                    </p>
-                  </div>
-                )}
-                {errors.password && (
+                {errors.newPassword && (
                   <p className="text-sm text-red-600 flex items-center">
                     <AlertCircle className="h-3 w-3 mr-1" />
-                    {errors.password}
+                    {errors.newPassword}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
-                  Confirm password
+                  Confirm new password
                 </Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirm your password"
+                    placeholder="Confirm new password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     className={`pr-10 transition-all duration-200 focus:ring-2 focus:ring-primary/20 ${
                       errors.confirmPassword ? "border-red-300 focus:border-red-300 focus:ring-red-200" : ""
                     }`}
-                    data-testid="input-confirm-password"
                   />
                   <Button
                     type="button"
@@ -256,12 +240,11 @@ export default function SignUp() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    data-testid="button-toggle-confirm-password"
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
-                {confirmPassword && password === confirmPassword && (
+                {confirmPassword && newPassword === confirmPassword && (
                   <p className="text-sm text-green-600 flex items-center">
                     <CheckCircle className="h-3 w-3 mr-1" />
                     Passwords match
@@ -279,21 +262,17 @@ export default function SignUp() {
                 type="submit"
                 disabled={isLoading}
                 className="w-full bg-primary hover:bg-primary/90 text-white py-2.5 rounded-lg font-medium transition-all duration-200 hover:shadow-lg"
-                data-testid="button-signup"
               >
-                {isLoading ? "Creating account..." : "Create account"}
+                {isLoading ? "Resetting password..." : "Reset password"}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Already have an account?{" "}
-                <Link href="/auth/login">
-                  <span className="text-primary hover:text-primary/80 font-medium cursor-pointer transition-colors">
-                    Sign in
-                  </span>
-                </Link>
-              </p>
+              <Link href="/auth/login">
+                <span className="text-sm text-gray-600 hover:text-primary cursor-pointer transition-colors">
+                  Back to sign in
+                </span>
+              </Link>
             </div>
           </CardContent>
         </Card>

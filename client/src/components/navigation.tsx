@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { FileText, Menu, X } from "lucide-react";
+import { FileText, Menu, X, User, LogOut } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [location] = useLocation();
+  const { user, logout, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,6 +35,15 @@ export default function Navigation() {
 
   const handleSignup = () => {
     window.location.href = "/auth/signup";
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (
@@ -83,21 +95,60 @@ export default function Navigation() {
                   </button>
                 </>
               )}
-              <Button
-                variant="ghost"
-                onClick={handleLogin}
-                className="text-gray-600 hover:text-primary px-3 py-2 text-sm font-medium"
-                data-testid="button-login"
-              >
-                Login
-              </Button>
-              <Button
-                onClick={handleSignup}
-                className="bg-primary hover:bg-primary/90 text-white px-4 py-2 text-sm font-medium"
-                data-testid="button-get-started"
-              >
-                Get Started
-              </Button>
+              
+              {isAuthenticated ? (
+                <>
+                  <Link href="/dashboard">
+                    <Button
+                      variant="ghost"
+                      className="text-gray-600 hover:text-primary px-3 py-2 text-sm font-medium"
+                    >
+                      Dashboard
+                    </Button>
+                  </Link>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="text-gray-600 hover:text-primary px-3 py-2 text-sm font-medium flex items-center"
+                      >
+                        <User className="h-4 w-4 mr-2" />
+                        {user?.username}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link href="/settings" className="flex items-center cursor-pointer">
+                          <User className="h-4 w-4 mr-2" />
+                          Settings
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleLogout} className="flex items-center cursor-pointer">
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Logout
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    onClick={handleLogin}
+                    className="text-gray-600 hover:text-primary px-3 py-2 text-sm font-medium"
+                    data-testid="button-login"
+                  >
+                    Login
+                  </Button>
+                  <Button
+                    onClick={handleSignup}
+                    className="bg-primary hover:bg-primary/90 text-white px-4 py-2 text-sm font-medium"
+                    data-testid="button-get-started"
+                  >
+                    Get Started
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
@@ -142,21 +193,58 @@ export default function Navigation() {
                     </>
                   )}
                   <div className="pt-4 border-t">
-                    <Button
-                      variant="ghost"
-                      onClick={handleLogin}
-                      className="w-full justify-start text-gray-600 hover:text-primary text-lg font-medium"
-                      data-testid="mobile-button-login"
-                    >
-                      Login
-                    </Button>
-                    <Button
-                      onClick={handleSignup}
-                      className="w-full mt-2 bg-primary hover:bg-primary/90 text-white text-lg font-medium"
-                      data-testid="mobile-button-get-started"
-                    >
-                      Get Started
-                    </Button>
+                    {isAuthenticated ? (
+                      <>
+                        <Link href="/dashboard">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start text-gray-600 hover:text-primary text-lg font-medium"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            Dashboard
+                          </Button>
+                        </Link>
+                        <Link href="/settings">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start text-gray-600 hover:text-primary text-lg font-medium"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            <User className="h-4 w-4 mr-2" />
+                            Settings
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            handleLogout();
+                            setIsOpen(false);
+                          }}
+                          className="w-full justify-start text-gray-600 hover:text-primary text-lg font-medium"
+                        >
+                          <LogOut className="h-4 w-4 mr-2" />
+                          Logout ({user?.username})
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant="ghost"
+                          onClick={handleLogin}
+                          className="w-full justify-start text-gray-600 hover:text-primary text-lg font-medium"
+                          data-testid="mobile-button-login"
+                        >
+                          Login
+                        </Button>
+                        <Button
+                          onClick={handleSignup}
+                          className="w-full mt-2 bg-primary hover:bg-primary/90 text-white text-lg font-medium"
+                          data-testid="mobile-button-get-started"
+                        >
+                          Get Started
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </nav>
               </SheetContent>

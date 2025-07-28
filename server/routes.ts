@@ -2,7 +2,7 @@ import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertUserSchema, insertInvoiceSchema } from "@shared/schema";
+import { insertUserSchema, insertInvoiceSchema, signupUserSchema, loginUserSchema, resetPasswordSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import session from "express-session";
 
@@ -168,46 +168,61 @@ const requireAuth = (req: any, res: any, next: any) => {
 
 // Authentication routes
 const authRoutes = (app: Express) => {
+  // Sign up
   app.post("/api/auth/signup", async (req, res) => {
     try {
-      const { email, password } = insertUserSchema.parse(req.body);
+      const validatedData = signupUserSchema.parse(req.body);
+      const { username, email, password } = validatedData;
       
-      // Check if user already exists
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ message: "User already exists" });
+      // Check if user already exists by email or username
+      const existingUserByEmail = email ? await storage.getUserByEmail(email) : null;
+      const existingUserByUsername = await storage.getUserByUsername(username);
+      
+      if (existingUserByEmail) {
+        return res.status(400).json({ message: "User with this email already exists" });
+      }
+      
+      if (existingUserByUsername) {
+        return res.status(400).json({ message: "Username already taken" });
       }
 
       // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, 12);
       
       // Create user
       const user = await storage.createUser({
-        email,
+        username,
+        email: email || null,
         password: hashedPassword,
       });
 
       // Create session
       (req as any).session.userId = user.id;
       (req as any).session.userEmail = user.email;
+      (req as any).session.username = user.username;
 
       res.status(201).json({
         id: user.id,
+        username: user.username,
         email: user.email,
         createdAt: user.createdAt,
       });
     } catch (error) {
       console.error("Signup error:", error);
+      if (error instanceof Error && error.message.includes('validation')) {
+        return res.status(400).json({ message: "Please check your input data" });
+      }
       res.status(400).json({ message: "Invalid signup data" });
     }
   });
 
+  // Login
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { email, password } = insertUserSchema.parse(req.body);
+      const { email, password } = loginUserSchema.parse(req.body);
       
-      // Find user
-      const user = await storage.getUserByEmail(email);
+      // Find user by email
+      const user = email ? await storage.getUserByEmail(email) : null;
       if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
@@ -221,9 +236,11 @@ const authRoutes = (app: Express) => {
       // Create session
       (req as any).session.userId = user.id;
       (req as any).session.userEmail = user.email;
+      (req as any).session.username = user.username;
 
       res.json({
         id: user.id,
+        username: user.username,
         email: user.email,
         createdAt: user.createdAt,
       });
@@ -233,15 +250,18 @@ const authRoutes = (app: Express) => {
     }
   });
 
+  // Logout
   app.post("/api/auth/logout", (req, res) => {
     (req as any).session?.destroy((err: any) => {
       if (err) {
         return res.status(500).json({ message: "Could not log out" });
       }
+      res.clearCookie('connect.sid');
       res.json({ message: "Logged out successfully" });
     });
   });
 
+  // Get current user
   app.get("/api/auth/me", requireAuth, async (req: any, res) => {
     try {
       const user = await storage.getUser(req.session.userId);
@@ -250,11 +270,63 @@ const authRoutes = (app: Express) => {
       }
       res.json({
         id: user.id,
+        username: user.username,
         email: user.email,
         createdAt: user.createdAt,
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Password reset request
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal if user exists for security
+        return res.json({ message: "If an account with that email exists, you will receive a reset link." });
+      }
+
+      // In a real app, you would send an email with a reset token
+      // For this demo, we'll return a success message
+      res.json({ 
+        message: "If an account with that email exists, you will receive a reset link.",
+        // For demo purposes, return success if user exists
+        resetAllowed: true 
+      });
+    } catch (error) {
+      console.error("Password reset request error:", error);
+      res.status(500).json({ message: "Failed to process reset request" });
+    }
+  });
+
+  // Password reset
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { email, newPassword } = resetPasswordSchema.parse(req.body);
+      
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
+      
+      // Update user password
+      await storage.updateUser(user.id, { password: hashedPassword });
+
+      res.json({ message: "Password reset successfully" });
+    } catch (error) {
+      console.error("Password reset error:", error);
+      res.status(400).json({ message: "Failed to reset password" });
     }
   });
 };
@@ -280,7 +352,7 @@ export function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/invoices", requireAuth, async (req: any, res) => {
     try {
-      const validatedData = insertInvoiceSchema.parse(req.body);
+      const validatedData = insertInvoiceSchema.omit({ userId: true }).parse(req.body);
       const invoice = await storage.createInvoice({
         ...validatedData,
         userId: req.session.userId,

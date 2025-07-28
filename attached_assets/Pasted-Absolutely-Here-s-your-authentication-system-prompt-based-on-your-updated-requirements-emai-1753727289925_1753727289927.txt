@@ -1,0 +1,100 @@
+Absolutely! Here's your **authentication system prompt** based on your updated requirements — **email, password, and confirm password only**:
+
+---
+
+### 🔐 **Prompt: Build Authentication System with Email, Password & Confirm Password for Invoice Generator Web App (Replit)**
+
+Design and build a secure, minimal **authentication system** for a web-based invoice generator app on Replit. It should handle **user registration**, **login**, **logout**, and **password recovery**, using only the following fields:
+
+* Email
+* Password
+* Confirm Password (for Sign-Up only)
+
+---
+
+### ✅ **Required Features**
+
+#### 🟩 Sign-Up Page
+
+* **Input Fields:**
+
+  * Email
+  * Password
+  * Confirm Password
+* **Validation Rules:**
+
+  * Password must be at least 6 characters
+  * Password and Confirm Password must match
+  * Email format must be valid
+* **On Success:**
+
+  * Save hashed password securely in the database
+  * Redirect user to dashboard (or auto-login)
+
+---
+
+#### 🟦 Login Page
+
+* **Input Fields:**
+
+  * Email
+  * Password
+* **Functionality:**
+
+  * Check user credentials
+  * If correct, generate a secure session or JWT token
+  * Redirect to dashboard
+  * Show error on invalid credentials
+* Include a link to “Forgot Password”
+
+---
+
+#### 🟨 Password Recovery Page
+
+* **Input Field:**
+
+  * Email
+* **Functionality:**
+
+  * On submit, send reset link or open reset form
+  * Reset password after user submits a new one
+  * Use same validation as Sign-Up
+
+---
+
+#### 🔁 Logout
+
+* Destroy session or remove token
+* Redirect user to Login page
+
+---
+
+### 🛡️ **Security Requirements**
+
+* Hash passwords using bcrypt
+* Use JWT for token-based authentication or session cookies
+* Protect all routes (dashboard, invoice creation, etc.) behind auth middleware
+* Prevent common vulnerabilities: XSS, CSRF, brute force
+
+---
+
+### 🖌️ **Design Guidelines**
+
+* Minimal, centered forms (card-style)
+* Responsive design (mobile & desktop)
+* Clean UI with soft shadows, rounded fields/buttons
+* Error states and validation messages shown inline
+* Use primary app color (blue/teal) for buttons
+
+---
+
+### 📦 **Tech Stack Suggestions**
+
+* **Frontend:** HTML/CSS or React
+* **Backend:** Node.js + Express.js
+* **Database:** MongoDB / Firebase / Supabase
+* **Auth:** bcrypt for password hashing, JWT for sessions
+
+---
+
+Let me know if you’d like a full working code example next!
