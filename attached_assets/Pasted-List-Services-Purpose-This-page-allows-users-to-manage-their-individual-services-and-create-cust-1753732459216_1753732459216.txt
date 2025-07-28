@@ -1,0 +1,150 @@
+List Services
+🧩 Purpose:
+This page allows users to manage their individual services and create custom packages. Services include name and unit price. Packages are customizable bundles of multiple services with editable names, quantities (optional), and a single total package price.
+
+Important: Packages are not directly linked to the unit services. This means the service entries and package components are stored separately. You can create packages that include similar-named services at completely different prices or logic, and no conflicts will occur.
+
+🖥️ UI Layout Design:
+📌 1. Page Header
+Title: “List Services”
+
+Positioned top-left
+
+Short description below:
+“Add services or create custom packages for invoicing.”
+
+🔁 Section Toggle Tabs
+At the top of the page, add two toggle buttons (visually like tabs):
+
+🛠️ Services
+
+📦 Packages
+
+Only one section is visible at a time based on selected tab.
+Default selected: Services
+
+🛠️ Services Section (Tab 1)
+➕ Add New Service
+Form Fields:
+
+Service Name (e.g., “Facebook Ads”)
+
+Unit Price (e.g., $500)
+
+Add Service button: styled prominently, aligned right or full-width
+
+✅ Validation:
+Service name must not be empty
+
+Unit price must be a valid positive number
+
+🧾 Services Table View
+Columns:
+
+Service Name
+
+Unit Price
+
+Actions: ✏️ Edit / 🗑️ Delete
+
+Example Table:
+Service Name	Unit Price	Actions
+Facebook Ads	$500	✏️ 🗑️
+Graphic Design	$200	✏️ 🗑️
+
+✅ Editing or deleting a service here does not affect any existing packages.
+
+📦 Packages Section (Tab 2)
+➕ Create New Package
+Form Fields:
+
+Package Name
+
+Package Price (e.g., $300)
+
+Add multiple services manually:
+
+Service Name (text input)
+
+Quantity (optional)
+
+🗑️ Remove row
+
+Button: Add Another Service
+
+Button: Create Package
+
+⚠️ Important Logic:
+The services inside a package are custom entries only. They are not pulled from the unit services list and don’t use pricing validation from there. You can name them similarly, but they are editable and standalone.
+
+💡 Quantity is optional and shown for reference only — no calculation is done.
+
+📃 Packages List View
+Display each package using card layout or collapsible list.
+
+Each Package Card Shows:
+Package Name
+
+Package Price
+
+Included Services list (with optional quantities)
+
+✏️ Edit / 🗑️ Delete buttons
+
+✅ Clear Working Example
+Suppose:
+
+You created a service named “Facebook Ads” in the Services tab with a unit price of $500.
+
+Then you created a package titled “FB Ads & Graphics” with a total price of $300, which includes:
+
+Facebook Ads (Qty: 1)
+
+Graphic Design (Qty: 2)
+
+This is allowed, and no conflict occurs.
+
+In this system:
+
+The “Facebook Ads” listed in the package is just a text entry.
+
+It does not pull the $500 unit price from Services.
+
+You are free to reuse the same name, set your own quantity and package price.
+
+Even if you later edit or delete the unit service “Facebook Ads,” your package remains unchanged.
+
+🧠 Key Rules Summary
+❌ No linkage between Services and Packages
+
+✅ Same names can be reused across both without syncing
+
+✅ Packages hold their own editable data
+
+✅ Services and packages are independent data structures
+
+📱 Responsive Design
+Tab buttons stack or become dropdown on smaller screens
+
+Forms use vertical layout
+
+Tables and cards use full width
+
+Use modals for editing on mobile
+
+🎨 Styling Notes
+Tabs: show active tab with highlight
+
+Use card or bordered panels to separate each section
+
+Maintain clean layout: rounded fields, subtle shadows
+
+Icons:
+
+🛠️ for Services
+
+📦 for Packages
+
+✏️ Edit
+
+🗑️ Delete
