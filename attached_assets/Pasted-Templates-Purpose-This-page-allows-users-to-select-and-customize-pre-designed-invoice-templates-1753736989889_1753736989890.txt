@@ -1,0 +1,133 @@
+Templates
+🧾 Purpose:
+
+This page allows users to select and customize pre-designed invoice templates. All users will see the same set of starter templates, and once selected, they can personalize them fully — including layout fields, labels, colors, and visibility toggles — to fit their branding and workflow.
+
+Users can toggle off/on fields, rename fields, add custom fields, and configure options like notes, terms & conditions, etc. A live preview shows what the final PDF invoice will look like.
+
+🖥️ UI Layout Design
+📌 Page Header
+
+Title: “Templates”
+
+Subtitle: “Choose and customize how your invoices look.”
+
+📂 Section A: Available Templates
+
+🖼️ Template Gallery
+
+Grid of template thumbnails (min 3 starter templates)
+
+Each template card includes:
+
+Template name (e.g., “Classic”, “Minimal”, “Modern”)
+
+Preview image or quick modal view
+
+Button: “Select Template”
+
+📌 When a user selects a template:
+
+It clones a version for them
+
+Redirects to the Template Editor panel
+
+🛠️ Section B: Template Editor (after selection)
+
+⚙️ Field Customization Panel
+
+Editable fields:
+
+Company Logo
+
+Company Info
+
+Client Info
+
+Item/Service Table:
+
+Columns: Item Name, Description, Quantity, Price, Total
+
+Toggle visibility for each column (e.g., turn off “Price”)
+
+Rename any column
+
+Summary Section:
+
+Subtotal, Tax, Discount, Total → all toggleable
+
+Footer Section:
+
+Notes (optional)
+
+Terms & Conditions (optional)
+
+Custom Text Fields (add/remove)
+
+🎨 Color and Font Settings
+
+Color pickers for:
+
+Primary text
+
+Header background
+
+Border color
+
+Font style selector (e.g., Sans-serif, Serif, Mono)
+
+📄 Live Preview Panel
+
+Shows a real-time visual of the invoice PDF as users customize
+
+Reflects all changes:
+
+Colors
+
+Field visibility
+
+Notes or terms on/off
+
+Custom fields
+
+Option to toggle between Desktop Preview and Mobile Preview
+
+💾 Save Template Button
+
+Stores all template config under the user profile
+
+Will be applied to all newly created invoices
+
+🧾 Use This Template Button
+
+Sets this template as default for invoice generation
+
+🛢️ Database (PostgreSQL via Supabase)
+
+📱 Responsive Design
+Template thumbnails stack vertically on mobile
+
+Editing options collapse into accordion panels for smaller screens
+
+Live preview auto-resizes and can be fullscreen toggled
+
+🎨 Styling Notes
+Use cards or tabs to separate:
+
+Template Gallery
+
+Field Editing
+
+PDF Preview
+
+Icons:
+
+🖼️ for preview
+
+🎨 for design settings
+
+✏️ for field edits
+
+👁️‍🗨️ for visibility toggle
+
+Soft shadow, clean color palette for branding feel

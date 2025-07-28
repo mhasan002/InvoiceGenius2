@@ -12,6 +12,7 @@ import Services from "@/pages/dashboard/services";
 import Company from "@/pages/dashboard/company";
 import Invoices from "@/pages/dashboard/invoices";
 import PaymentMethods from "@/pages/dashboard/payment-methods";
+import Templates from "@/pages/dashboard/templates";
 import Login from "@/pages/auth/login";
 import SignUp from "@/pages/auth/signup";
 import ForgotPassword from "@/pages/auth/forgot-password";
@@ -50,6 +51,11 @@ function Router() {
       <Route path="/dashboard/payment-methods">
         <ProtectedRoute>
           <PaymentMethods />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/dashboard/templates">
+        <ProtectedRoute>
+          <Templates />
         </ProtectedRoute>
       </Route>
       <Route path="/auth/login" component={Login} />
