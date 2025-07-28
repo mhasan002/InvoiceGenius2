@@ -7,6 +7,7 @@ InvoiceGen is a modern full-stack web application designed for creating professi
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Database: Supabase (PostgreSQL) - User requested Supabase integration with connection string configuration.
 
 ## System Architecture
 
@@ -35,8 +36,10 @@ The application uses shadcn/ui components built on top of Radix UI primitives, p
 
 ### Database Schema
 Located in `shared/schema.ts`, currently defines:
-- **Users table**: Basic user authentication with username/password
+- **Users table**: Basic user authentication with username/password and timestamps
+- **Invoices table**: Invoice data including client info, amounts, and status tracking
 - Drizzle schema with Zod validation for type safety
+- Support for Supabase PostgreSQL connection
 
 ### Storage Layer
 The application implements a storage interface pattern:
@@ -46,6 +49,7 @@ The application implements a storage interface pattern:
 
 ### Frontend Pages
 - **Home Page**: Marketing landing page with hero section, features, and call-to-action
+- **Settings Page**: Database configuration page for Supabase connection string setup
 - **404 Page**: Not found page with developer-friendly messaging
 
 ### UI Components
@@ -72,7 +76,7 @@ The application implements a storage interface pattern:
 ## External Dependencies
 
 ### Core Technologies
-- **Database**: PostgreSQL via Neon Database serverless platform
+- **Database**: PostgreSQL via Supabase serverless platform (user configurable)
 - **Authentication**: Cookie-based sessions with PostgreSQL storage
 - **UI Components**: Radix UI primitives for accessibility
 - **Styling**: Tailwind CSS with PostCSS processing

@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { FileText, Menu, X } from "lucide-react";
+import { FileText, Menu, X, Settings } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Link, useLocation } from "wouter";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [location] = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -46,37 +48,55 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                <FileText className="text-primary mr-2 h-8 w-8" />
-                InvoiceGen
-              </h1>
+              <Link href="/">
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center cursor-pointer hover:text-primary transition-colors">
+                  <FileText className="text-primary mr-2 h-8 w-8" />
+                  InvoiceGen
+                </h1>
+              </Link>
             </div>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              <button
-                onClick={() => handleNavClick("#features")}
-                className="text-gray-600 hover:text-primary px-3 py-2 text-sm font-medium transition-colors"
-                data-testid="nav-features"
-              >
-                Features
-              </button>
-              <button
-                onClick={() => handleNavClick("#how-it-works")}
-                className="text-gray-600 hover:text-primary px-3 py-2 text-sm font-medium transition-colors"
-                data-testid="nav-how-it-works"
-              >
-                How It Works
-              </button>
-              <button
-                onClick={() => handleNavClick("#pricing")}
-                className="text-gray-600 hover:text-primary px-3 py-2 text-sm font-medium transition-colors"
-                data-testid="nav-pricing"
-              >
-                Pricing
-              </button>
+              {location === "/" && (
+                <>
+                  <button
+                    onClick={() => handleNavClick("#features")}
+                    className="text-gray-600 hover:text-primary px-3 py-2 text-sm font-medium transition-colors"
+                    data-testid="nav-features"
+                  >
+                    Features
+                  </button>
+                  <button
+                    onClick={() => handleNavClick("#how-it-works")}
+                    className="text-gray-600 hover:text-primary px-3 py-2 text-sm font-medium transition-colors"
+                    data-testid="nav-how-it-works"
+                  >
+                    How It Works
+                  </button>
+                  <button
+                    onClick={() => handleNavClick("#pricing")}
+                    className="text-gray-600 hover:text-primary px-3 py-2 text-sm font-medium transition-colors"
+                    data-testid="nav-pricing"
+                  >
+                    Pricing
+                  </button>
+                </>
+              )}
+              <Link href="/settings">
+                <Button
+                  variant="ghost"
+                  className={`px-3 py-2 text-sm font-medium transition-colors ${
+                    location === "/settings" ? "text-primary bg-primary/10" : "text-gray-600 hover:text-primary"
+                  }`}
+                  data-testid="nav-settings"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Button>
+              </Link>
               <Button
                 variant="ghost"
                 onClick={handleLogin}
@@ -110,27 +130,44 @@ export default function Navigation() {
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                 <nav className="flex flex-col space-y-4 mt-8">
-                  <button
-                    onClick={() => handleNavClick("#features")}
-                    className="text-left text-gray-600 hover:text-primary px-3 py-2 text-lg font-medium transition-colors"
-                    data-testid="mobile-nav-features"
-                  >
-                    Features
-                  </button>
-                  <button
-                    onClick={() => handleNavClick("#how-it-works")}
-                    className="text-left text-gray-600 hover:text-primary px-3 py-2 text-lg font-medium transition-colors"
-                    data-testid="mobile-nav-how-it-works"
-                  >
-                    How It Works
-                  </button>
-                  <button
-                    onClick={() => handleNavClick("#pricing")}
-                    className="text-left text-gray-600 hover:text-primary px-3 py-2 text-lg font-medium transition-colors"
-                    data-testid="mobile-nav-pricing"
-                  >
-                    Pricing
-                  </button>
+                  {location === "/" && (
+                    <>
+                      <button
+                        onClick={() => handleNavClick("#features")}
+                        className="text-left text-gray-600 hover:text-primary px-3 py-2 text-lg font-medium transition-colors"
+                        data-testid="mobile-nav-features"
+                      >
+                        Features
+                      </button>
+                      <button
+                        onClick={() => handleNavClick("#how-it-works")}
+                        className="text-left text-gray-600 hover:text-primary px-3 py-2 text-lg font-medium transition-colors"
+                        data-testid="mobile-nav-how-it-works"
+                      >
+                        How It Works
+                      </button>
+                      <button
+                        onClick={() => handleNavClick("#pricing")}
+                        className="text-left text-gray-600 hover:text-primary px-3 py-2 text-lg font-medium transition-colors"
+                        data-testid="mobile-nav-pricing"
+                      >
+                        Pricing
+                      </button>
+                    </>
+                  )}
+                  <Link href="/settings">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setIsOpen(false)}
+                      className={`w-full justify-start text-lg font-medium transition-colors ${
+                        location === "/settings" ? "text-primary bg-primary/10" : "text-gray-600 hover:text-primary"
+                      }`}
+                      data-testid="mobile-nav-settings"
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Button>
+                  </Link>
                   <div className="pt-4 border-t">
                     <Button
                       variant="ghost"
