@@ -20,14 +20,23 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // TODO: Implement authentication logic
-      console.log("Login attempt:", { email, password });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For now, just show error for demo
-      setError("Invalid email or password");
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Login successful, redirect to dashboard
+        window.location.href = "/dashboard";
+      } else {
+        setError(data.message || "Login failed");
+      }
     } catch (err) {
       setError("Something went wrong. Please try again.");
     } finally {

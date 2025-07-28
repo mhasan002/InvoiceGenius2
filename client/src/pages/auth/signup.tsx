@@ -59,12 +59,23 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      // TODO: Implement registration logic
-      console.log("Registration attempt:", { email, password });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Registration successful, redirect to dashboard
+        window.location.href = "/dashboard";
+      } else {
+        setErrors({ general: data.message || "Registration failed" });
+      }
     } catch (err) {
       setErrors({ general: "Something went wrong. Please try again." });
     } finally {

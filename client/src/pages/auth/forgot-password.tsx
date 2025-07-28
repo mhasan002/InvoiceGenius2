@@ -30,12 +30,8 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      // TODO: Implement password reset logic
-      console.log("Password reset request for:", email);
-      
-      // Simulate API call
+      // For now, just simulate password reset since we don't have email functionality
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
       setSuccess(true);
     } catch (err) {
       setError("Something went wrong. Please try again.");
