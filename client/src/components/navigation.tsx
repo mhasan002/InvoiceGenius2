@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { FileText, Menu, X, Settings } from "lucide-react";
+import { FileText, Menu, X } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Link, useLocation } from "wouter";
 
@@ -85,18 +85,6 @@ export default function Navigation() {
                   </button>
                 </>
               )}
-              <Link href="/settings">
-                <Button
-                  variant="ghost"
-                  className={`px-3 py-2 text-sm font-medium transition-colors ${
-                    location === "/settings" ? "text-primary bg-primary/10" : "text-gray-600 hover:text-primary"
-                  }`}
-                  data-testid="nav-settings"
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </Button>
-              </Link>
               <Button
                 variant="ghost"
                 onClick={handleLogin}
@@ -155,19 +143,6 @@ export default function Navigation() {
                       </button>
                     </>
                   )}
-                  <Link href="/settings">
-                    <Button
-                      variant="ghost"
-                      onClick={() => setIsOpen(false)}
-                      className={`w-full justify-start text-lg font-medium transition-colors ${
-                        location === "/settings" ? "text-primary bg-primary/10" : "text-gray-600 hover:text-primary"
-                      }`}
-                      data-testid="mobile-nav-settings"
-                    >
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </Button>
-                  </Link>
                   <div className="pt-4 border-t">
                     <Button
                       variant="ghost"
