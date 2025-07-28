@@ -175,6 +175,15 @@ export default function Templates() {
     }
   };
 
+  const updateCustomField = (index: number, key: 'name' | 'value', value: string) => {
+    if (editingTemplate) {
+      const updatedFields = editingTemplate.customFields.map((field, i) =>
+        i === index ? { ...field, [key]: value } : field
+      );
+      setEditingTemplate({ ...editingTemplate, customFields: updatedFields });
+    }
+  };
+
   const handleSaveTemplate = () => {
     if (!editingTemplate) return;
     
@@ -195,20 +204,35 @@ export default function Templates() {
 
   const handleUseTemplate = () => {
     if (!editingTemplate) return;
-    setDefaultMutation.mutate(editingTemplate.id);
+    // Only call API for saved templates, not default ones
+    if (!editingTemplate.id.includes('_')) {
+      setDefaultMutation.mutate(editingTemplate.id);
+    } else {
+      // For new templates, save first then set as default
+      handleSaveTemplate();
+    }
   };
 
   const ProfessionalPreview = ({ template }: { template: TemplateConfig }) => (
     <div className="bg-white p-8 shadow-lg rounded-lg max-w-2xl mx-auto" style={{ color: template.textColor, fontFamily: template.fontFamily }}>
       {/* Header */}
       <div className="flex justify-between items-start mb-8">
-        <div>
-          <h1 className="text-4xl font-light tracking-wider mb-2" style={{ color: template.primaryColor }}>
-            INVOICE
-          </h1>
-          <p className="text-sm" style={{ color: template.textColor }}>
-            INVOICE NUMBER • 01234511
-          </p>
+        <div className="flex items-center gap-4">
+          {template.logoVisible && (
+            <div className="w-12 h-12" style={{ backgroundColor: template.primaryColor }}>
+              <svg viewBox="0 0 32 32" className="w-full h-full p-2 text-white">
+                <path fill="currentColor" d="M16 8l8 8-8 8-8-8z"/>
+              </svg>
+            </div>
+          )}
+          <div>
+            <h1 className="text-4xl font-light tracking-wider mb-2" style={{ color: template.primaryColor }}>
+              INVOICE
+            </h1>
+            <p className="text-sm" style={{ color: template.textColor }}>
+              INVOICE NUMBER • 01234511
+            </p>
+          </div>
         </div>
         <div className="text-right text-sm">
           <p><strong>DATE:</strong> 02/02/2024</p>
@@ -228,11 +252,12 @@ export default function Templates() {
           </div>
         </div>
         <div>
-          <h3 className="font-semibold mb-2">Your Company Name:</h3>
+          <h3 className="font-semibold mb-2">Your Company Name</h3>
           <div className="text-sm space-y-1">
-            <p>YOUR NAME</p>
-            <p>123 ANYWHERE ST., ANY CITY</p>
-            <p>HELLO@REALLYGREATSITE.COM</p>
+            <p>Company Address Line 1</p>
+            <p>Company Address Line 2</p>
+            <p>company@email.com</p>
+            <p>(123) 456-7890</p>
           </div>
         </div>
       </div>
@@ -244,7 +269,7 @@ export default function Templates() {
 
       {/* Items Table */}
       <div className="mb-8">
-        <div className="grid grid-cols-4 gap-4 p-3 text-sm font-medium" style={{ backgroundColor: '#f3f4f6' }}>
+        <div className={`grid gap-4 p-3 text-sm font-medium`} style={{ backgroundColor: '#f3f4f6', gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
           {template.fields.filter(f => f.visible).map(field => (
             <div key={field.id} className="uppercase">
               {field.customLabel || field.label}
@@ -253,11 +278,25 @@ export default function Templates() {
         </div>
         
         {[1, 2, 3, 4].map((item) => (
-          <div key={item} className="grid grid-cols-4 gap-4 p-3 text-sm border-b" style={{ borderColor: template.borderColor }}>
-            <div>YOUR DESCRIPTION</div>
-            <div>$ 25.00</div>
-            <div>2</div>
-            <div>$ 50.00</div>
+          <div key={item} className={`grid gap-4 p-3 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
+            {template.fields.filter(f => f.visible).map((field, index) => (
+              <div key={field.id}>
+                {field.id === 'description' && 'YOUR DESCRIPTION'}
+                {field.id === 'unitPrice' && '$ 25.00'}
+                {field.id === 'quantity' && '2'}
+                {field.id === 'total' && '$ 50.00'}
+              </div>
+            ))}
+          </div>
+        ))}
+
+        {/* Custom Fields */}
+        {template.customFields.map((customField, index) => (
+          <div key={`custom-${index}`} className={`grid gap-4 p-3 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
+            <div>{customField.name}</div>
+            <div>{customField.value}</div>
+            <div>-</div>
+            <div>-</div>
           </div>
         ))}
 
@@ -323,14 +362,16 @@ export default function Templates() {
           {/* Logo and Company */}
           <div className="mb-8">
             <div className="flex items-center mb-2">
-              <div className="w-8 h-8 mr-3" style={{ backgroundColor: template.primaryColor }}>
-                <svg viewBox="0 0 32 32" className="w-full h-full p-1 text-white">
-                  <path fill="currentColor" d="M16 8l8 8-8 8-8-8z"/>
-                </svg>
-              </div>
+              {template.logoVisible && (
+                <div className="w-8 h-8 mr-3" style={{ backgroundColor: template.primaryColor }}>
+                  <svg viewBox="0 0 32 32" className="w-full h-full p-1 text-white">
+                    <path fill="currentColor" d="M16 8l8 8-8 8-8-8z"/>
+                  </svg>
+                </div>
+              )}
               <div>
-                <h1 className="text-2xl font-bold">Borcelle</h1>
-                <p className="text-sm text-gray-600">Meet All Your Needs</p>
+                <h1 className="text-2xl font-bold">Your Company Name</h1>
+                <p className="text-sm text-gray-600">Company Tagline</p>
               </div>
             </div>
           </div>
@@ -347,8 +388,8 @@ export default function Templates() {
               
               <h3 className="font-semibold mb-2 mt-4">PAY TO:</h3>
               <div className="text-sm space-y-1">
-                <p>Borcelle Bank</p>
-                <p>Account Name: Adeline Palmerston</p>
+                <p>Your Company Bank</p>
+                <p>Account Name: Company Account</p>
                 <p>Account No.: 0123 4567 8901</p>
               </div>
             </div>
@@ -363,7 +404,7 @@ export default function Templates() {
 
           {/* Items Table */}
           <div className="mb-8">
-            <div className="grid grid-cols-4 gap-4 pb-2 border-b-2" style={{ borderColor: template.primaryColor }}>
+            <div className={`grid gap-4 pb-2 border-b-2`} style={{ borderColor: template.primaryColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
               {template.fields.filter(f => f.visible).map(field => (
                 <div key={field.id} className="font-semibold text-sm uppercase">
                   {field.customLabel || field.label}
@@ -379,11 +420,25 @@ export default function Templates() {
               { desc: "Brand photography", price: 100, qty: 1 },
               { desc: "Brand guide", price: 100, qty: 1 },
             ].map((item, idx) => (
-              <div key={idx} className="grid grid-cols-4 gap-4 py-2 text-sm border-b" style={{ borderColor: template.borderColor }}>
-                <div>{item.desc}</div>
-                <div>{item.price}</div>
-                <div>{item.qty}</div>
-                <div>${item.price * item.qty}</div>
+              <div key={idx} className={`grid gap-4 py-2 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
+                {template.fields.filter(f => f.visible).map((field, index) => (
+                  <div key={field.id}>
+                    {field.id === 'description' && item.desc}
+                    {field.id === 'unitPrice' && item.price}
+                    {field.id === 'quantity' && item.qty}
+                    {field.id === 'total' && `$${item.price * item.qty}`}
+                  </div>
+                ))}
+              </div>
+            ))}
+
+            {/* Custom Fields */}
+            {template.customFields.map((customField, index) => (
+              <div key={`custom-${index}`} className={`grid gap-4 py-2 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
+                <div>{customField.name}</div>
+                <div>{customField.value}</div>
+                <div>-</div>
+                <div>-</div>
               </div>
             ))}
 
