@@ -9,6 +9,7 @@ InvoiceGen is a modern full-stack web application designed for creating professi
 Preferred communication style: Simple, everyday language.
 Database: Supabase (PostgreSQL) - User requested Supabase integration with connection string configuration.
 Dashboard Layout: Mobile devices use collapsible sidebar, Desktop/laptop displays fixed left navigation without sidebar.
+Navigation Issue Fix: User reported Payment Methods page losing left navigation - fixed by wrapping with DashboardLayout component.
 
 ## Recent Changes
 

@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { type PaymentMethod } from "@shared/schema";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 
 interface CustomField {
   name: string;
@@ -167,7 +168,8 @@ export default function PaymentMethods() {
   };
 
   return (
-    <div className="space-y-6">
+    <DashboardLayout>
+      <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Payment Methods</h1>
@@ -382,6 +384,7 @@ export default function PaymentMethods() {
           </Card>
         )}
       </div>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }
