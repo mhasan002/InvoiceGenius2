@@ -8,6 +8,9 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Home from "@/pages/home";
 import Settings from "@/pages/settings";
 import Dashboard from "@/pages/dashboard";
+import Services from "@/pages/dashboard/services";
+import Company from "@/pages/dashboard/company";
+import Invoices from "@/pages/dashboard/invoices";
 import Login from "@/pages/auth/login";
 import SignUp from "@/pages/auth/signup";
 import ForgotPassword from "@/pages/auth/forgot-password";
@@ -26,6 +29,21 @@ function Router() {
       <Route path="/dashboard">
         <ProtectedRoute>
           <Dashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/dashboard/services">
+        <ProtectedRoute>
+          <Services />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/dashboard/company">
+        <ProtectedRoute>
+          <Company />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/dashboard/invoices">
+        <ProtectedRoute>
+          <Invoices />
         </ProtectedRoute>
       </Route>
       <Route path="/auth/login" component={Login} />
