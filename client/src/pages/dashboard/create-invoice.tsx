@@ -252,6 +252,17 @@ export default function CreateInvoice() {
     createInvoiceMutation.mutate(invoiceData);
   };
 
+  // Handle PDF download
+  const handleDownloadPDF = () => {
+    if (!clientName || items.length === 0) {
+      toast({ title: "Please fill in client name and add at least one item before generating PDF", variant: "destructive" });
+      return;
+    }
+    
+    // For now, show a message that PDF generation is being implemented
+    toast({ title: "PDF generation feature coming soon!", description: "This feature is currently being developed." });
+  };
+
   return (
     <DashboardLayout title="Create Invoice">
       <div className="space-y-6">
@@ -270,7 +281,7 @@ export default function CreateInvoice() {
               <Eye className="h-4 w-4 mr-2" />
               Preview Invoice
             </Button>
-            <Button>
+            <Button onClick={handleDownloadPDF}>
               <Download className="h-4 w-4 mr-2" />
               Download PDF
             </Button>

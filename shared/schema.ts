@@ -138,6 +138,14 @@ export const insertInvoiceSchema = createInsertSchema(invoices).omit({
   userId: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  // Convert number fields to handle both string and number inputs
+  taxPercentage: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
+  discountValue: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
+  subtotal: z.union([z.string(), z.number()]).transform(val => String(val)),
+  taxAmount: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
+  discountAmount: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
+  total: z.union([z.string(), z.number()]).transform(val => String(val)),
 });
 
 export const updateInvoiceSchema = insertInvoiceSchema.partial();
@@ -148,6 +156,8 @@ export const insertServiceSchema = createInsertSchema(services).omit({
   userId: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  unitPrice: z.union([z.string(), z.number()]).transform(val => String(val)),
 });
 
 // Package schemas
@@ -156,6 +166,8 @@ export const insertPackageSchema = createInsertSchema(packages).omit({
   userId: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  price: z.union([z.string(), z.number()]).transform(val => String(val)),
 });
 
 // Company profile schemas
