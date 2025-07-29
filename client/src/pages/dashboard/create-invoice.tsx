@@ -121,7 +121,7 @@ export default function CreateInvoice() {
   // Get selected company profile and payment method details
   const selectedCompany = companyProfiles.find((cp: CompanyProfile) => cp.id === selectedCompanyProfile);
   const selectedPayment = paymentMethods.find((pm: PaymentMethod) => pm.id === selectedPaymentMethod);
-  const defaultTemplate = templates.find((t: Template) => t.isDefault) || templates[0];
+  const defaultTemplate = templates.find((t: Template) => t.isDefault === "true") || templates[0];
 
   // Generate invoice number on load
   useEffect(() => {
@@ -526,18 +526,34 @@ export default function CreateInvoice() {
                         </div>
                       </div>
 
+                      {/* Payment Information - Below table as per template design */}
+                      {selectedPayment && (
+                        <div className="mt-8 p-4 border rounded-lg mb-6" style={{ borderColor: defaultTemplate.config?.primaryColor }}>
+                          <h4 className="font-semibold mb-3" style={{ color: defaultTemplate.config?.primaryColor }}>PAYMENT INFORMATION</h4>
+                          <div className="grid grid-cols-2 gap-6 text-sm">
+                            <div>
+                              <p><strong>Payment Method:</strong> {selectedPayment.type}</p>
+                              {selectedPayment.fields && Object.entries(selectedPayment.fields).map(([key, value]) => (
+                                <p key={key}><strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong> {value}</p>
+                              ))}
+                              {paymentReceivedBy && <p><strong>Payment To:</strong> {paymentReceivedBy}</p>}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Notes and Terms */}
-                      {(showNotes && notes) && (
+                      {(defaultTemplate.config?.notes || (showNotes && notes)) && (
                         <div className="mb-6">
                           <h4 className="font-semibold mb-2">NOTES:</h4>
-                          <p className="whitespace-pre-line text-sm">{notes}</p>
+                          <p className="whitespace-pre-line text-sm">{defaultTemplate.config?.notes || notes}</p>
                         </div>
                       )}
                       
-                      {(showTerms && terms) && (
+                      {(defaultTemplate.config?.terms || (showTerms && terms)) && (
                         <div className="mb-6">
                           <h4 className="font-semibold mb-2">TERMS & CONDITIONS:</h4>
-                          <p className="whitespace-pre-line text-sm">{terms}</p>
+                          <p className="whitespace-pre-line text-sm">{defaultTemplate.config?.terms || terms}</p>
                         </div>
                       )}
                     </div>
@@ -572,7 +588,6 @@ export default function CreateInvoice() {
                     </div>
                     <div className="text-right text-sm">
                       <p><strong>DATE:</strong> {new Date().toLocaleDateString()}</p>
-                      <p><strong>INVOICE NUMBER:</strong> {invoiceNumber || 'Not specified'}</p>
                       {platform && <p><strong>PLATFORM:</strong> {platform}</p>}
                     </div>
                   </div>
@@ -604,23 +619,7 @@ export default function CreateInvoice() {
                     </div>
                   </div>
 
-                  {/* Payment Information - Positioned according to template design */}
-                  {selectedPayment && (
-                    <div className="mt-8 p-4 border rounded-lg mb-6" style={{ borderColor: defaultTemplate.config?.borderColor }}>
-                      <h4 className="font-semibold mb-3" style={{ color: defaultTemplate.config?.primaryColor }}>PAYMENT INFORMATION</h4>
-                      <div className="grid grid-cols-2 gap-6 text-sm">
-                        <div>
-                          <p><strong>Payment Method:</strong> {selectedPayment.type}</p>
-                          {selectedPayment.fields && Object.entries(selectedPayment.fields).map(([key, value]) => (
-                            <p key={key}><strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong> {value}</p>
-                          ))}
-                        </div>
-                        <div>
-                          {paymentReceivedBy && <p><strong>Payment To:</strong> {paymentReceivedBy}</p>}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+
 
                   {/* Items Table */}
                   <div className="mb-8">
@@ -703,19 +702,35 @@ export default function CreateInvoice() {
                     </div>
                   </div>
 
+                  {/* Payment Information - Below table as per template design */}
+                  {selectedPayment && (
+                    <div className="mt-8 p-4 border rounded-lg mb-6" style={{ borderColor: defaultTemplate.config?.borderColor }}>
+                      <h4 className="font-semibold mb-3" style={{ color: defaultTemplate.config?.primaryColor }}>PAYMENT INFORMATION</h4>
+                      <div className="grid grid-cols-2 gap-6 text-sm">
+                        <div>
+                          <p><strong>Payment Method:</strong> {selectedPayment.type}</p>
+                          {selectedPayment.fields && Object.entries(selectedPayment.fields).map(([key, value]) => (
+                            <p key={key}><strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong> {value}</p>
+                          ))}
+                          {paymentReceivedBy && <p><strong>Payment To:</strong> {paymentReceivedBy}</p>}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Footer */}
                   <div className="grid grid-cols-2 gap-8 mt-8">
                     <div>
-                      {(showNotes && notes) && (
+                      {(defaultTemplate.config?.notes || (showNotes && notes)) && (
                         <div className="text-sm">
                           <h4 className="font-semibold mb-2">NOTES:</h4>
-                          <div className="whitespace-pre-line">{notes}</div>
+                          <div className="whitespace-pre-line">{defaultTemplate.config?.notes || notes}</div>
                         </div>
                       )}
-                      {(showTerms && terms) && (
+                      {(defaultTemplate.config?.terms || (showTerms && terms)) && (
                         <div className="text-sm mt-4">
                           <h4 className="font-semibold mb-2">TERMS & CONDITIONS:</h4>
-                          <div className="whitespace-pre-line">{terms}</div>
+                          <div className="whitespace-pre-line">{defaultTemplate.config?.terms || terms}</div>
                         </div>
                       )}
                     </div>
