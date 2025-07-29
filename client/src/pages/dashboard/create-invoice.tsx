@@ -288,6 +288,134 @@ export default function CreateInvoice() {
           </div>
         </div>
 
+        {/* Invoice Preview */}
+        {showPreview && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Invoice Preview</span>
+                <Button variant="outline" size="sm" onClick={() => setShowPreview(false)}>
+                  <X className="h-4 w-4 mr-2" />
+                  Close Preview
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-white p-8 border rounded-lg max-w-4xl mx-auto">
+                {/* Invoice Header */}
+                <div className="flex justify-between items-start mb-8">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">INVOICE</h1>
+                    <p className="text-gray-600">Invoice #{invoiceNumber || 'Not specified'}</p>
+                  </div>
+                  <div className="text-right text-sm text-gray-600">
+                    <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
+                    {platform && <p><strong>Platform:</strong> {platform}</p>}
+                  </div>
+                </div>
+
+                {/* Bill To Section */}
+                <div className="grid grid-cols-2 gap-8 mb-8">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Bill To:</h3>
+                    <div className="text-gray-700">
+                      <p className="font-medium">{clientName || 'Client Name'}</p>
+                      {clientEmail && <p>{clientEmail}</p>}
+                      {clientPhone && <p>{clientPhone}</p>}
+                      {clientAddress && <p className="whitespace-pre-line">{clientAddress}</p>}
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment To:</h3>
+                    <div className="text-gray-700">
+                      <p className="font-medium">{paymentReceivedBy || 'Your Name'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items Table */}
+                <div className="mb-8">
+                  <table className="w-full border-collapse border border-gray-300">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="border border-gray-300 px-4 py-2 text-left">Item</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Qty</th>
+                        <th className="border border-gray-300 px-4 py-2 text-right">Unit Price</th>
+                        <th className="border border-gray-300 px-4 py-2 text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.map((item) => (
+                        <tr key={item.id}>
+                          <td className="border border-gray-300 px-4 py-2">
+                            <div>
+                              <p className="font-medium">{item.name}</p>
+                              {item.type === 'package' && item.packageServices && (
+                                <div className="text-sm text-gray-600 mt-1">
+                                  <p>Package includes:</p>
+                                  <ul className="list-disc list-inside">
+                                    {item.packageServices.map((service, idx) => (
+                                      <li key={idx}>{service.name} {service.quantity && `(${service.quantity})`}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">{item.quantity}</td>
+                          <td className="border border-gray-300 px-4 py-2 text-right">${item.unitPrice.toFixed(2)}</td>
+                          <td className="border border-gray-300 px-4 py-2 text-right">${item.total.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Totals */}
+                <div className="flex justify-end mb-8">
+                  <div className="w-64 space-y-2">
+                    <div className="flex justify-between">
+                      <span>Subtotal:</span>
+                      <span>${subtotal.toFixed(2)}</span>
+                    </div>
+                    {taxPercentage > 0 && (
+                      <div className="flex justify-between">
+                        <span>Tax ({taxPercentage}%):</span>
+                        <span>${taxAmount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {discountValue > 0 && (
+                      <div className="flex justify-between text-red-600">
+                        <span>Discount:</span>
+                        <span>-${discountAmount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <Separator />
+                    <div className="flex justify-between font-bold text-lg">
+                      <span>Total:</span>
+                      <span>${total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notes and Terms */}
+                {(showNotes && notes) && (
+                  <div className="mb-4">
+                    <h4 className="font-semibold text-gray-900 mb-2">Notes:</h4>
+                    <p className="text-gray-700 whitespace-pre-line">{notes}</p>
+                  </div>
+                )}
+                {(showTerms && terms) && (
+                  <div className="mb-4">
+                    <h4 className="font-semibold text-gray-900 mb-2">Terms & Conditions:</h4>
+                    <p className="text-gray-700 whitespace-pre-line">{terms}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Form Section */}
           <div className="lg:col-span-2 space-y-6">
