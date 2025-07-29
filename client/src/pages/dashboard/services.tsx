@@ -53,7 +53,7 @@ export default function Services() {
   // Service mutations
   const createServiceMutation = useMutation({
     mutationFn: (data: { name: string; unitPrice: string }) =>
-      apiRequest('/api/services', 'POST', { name: data.name, unitPrice: data.unitPrice }),
+      apiRequest('POST', '/api/services', { name: data.name, unitPrice: data.unitPrice }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/services'] });
       resetServiceForm();
@@ -67,7 +67,7 @@ export default function Services() {
 
   const updateServiceMutation = useMutation({
     mutationFn: (data: { id: string; name: string; unitPrice: string }) =>
-      apiRequest(`/api/services/${data.id}`, 'PUT', { name: data.name, unitPrice: data.unitPrice }),
+      apiRequest('PUT', `/api/services/${data.id}`, { name: data.name, unitPrice: data.unitPrice }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/services'] });
       resetServiceForm();
@@ -80,7 +80,7 @@ export default function Services() {
   });
 
   const deleteServiceMutation = useMutation({
-    mutationFn: (id: string) => apiRequest(`/api/services/${id}`, 'DELETE'),
+    mutationFn: (id: string) => apiRequest('DELETE', `/api/services/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/services'] });
       toast({ title: "Success", description: "Service deleted successfully." });
@@ -93,7 +93,7 @@ export default function Services() {
   // Package mutations
   const createPackageMutation = useMutation({
     mutationFn: (data: { name: string; price: string; services: PackageService[] }) =>
-      apiRequest('/api/packages', 'POST', { name: data.name, price: data.price, services: data.services }),
+      apiRequest('POST', '/api/packages', { name: data.name, price: data.price, services: data.services }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/packages'] });
       resetPackageForm();
@@ -107,7 +107,7 @@ export default function Services() {
 
   const updatePackageMutation = useMutation({
     mutationFn: (data: { id: string; name: string; price: string; services: PackageService[] }) =>
-      apiRequest(`/api/packages/${data.id}`, 'PUT', { name: data.name, price: data.price, services: data.services }),
+      apiRequest('PUT', `/api/packages/${data.id}`, { name: data.name, price: data.price, services: data.services }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/packages'] });
       resetPackageForm();
@@ -120,7 +120,7 @@ export default function Services() {
   });
 
   const deletePackageMutation = useMutation({
-    mutationFn: (id: string) => apiRequest(`/api/packages/${id}`, 'DELETE'),
+    mutationFn: (id: string) => apiRequest('DELETE', `/api/packages/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/packages'] });
       toast({ title: "Success", description: "Package deleted successfully." });

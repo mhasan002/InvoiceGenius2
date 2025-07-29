@@ -37,7 +37,7 @@ export default function PaymentMethods() {
   // Payment method mutations
   const createMutation = useMutation({
     mutationFn: (data: { type: string; name: string; fields: Record<string, string> }) =>
-      apiRequest('/api/payment-methods', 'POST', data),
+      apiRequest('POST', '/api/payment-methods', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/payment-methods'] });
       resetForm();
@@ -51,7 +51,7 @@ export default function PaymentMethods() {
 
   const updateMutation = useMutation({
     mutationFn: (data: { id: string; type: string; name: string; fields: Record<string, string> }) =>
-      apiRequest(`/api/payment-methods/${data.id}`, 'PUT', { type: data.type, name: data.name, fields: data.fields }),
+      apiRequest('PUT', `/api/payment-methods/${data.id}`, { type: data.type, name: data.name, fields: data.fields }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/payment-methods'] });
       resetForm();
@@ -64,7 +64,7 @@ export default function PaymentMethods() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest(`/api/payment-methods/${id}`, 'DELETE'),
+    mutationFn: (id: string) => apiRequest('DELETE', `/api/payment-methods/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/payment-methods'] });
       toast({ title: "Success", description: "Payment method deleted successfully." });
@@ -168,7 +168,7 @@ export default function PaymentMethods() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout title="Payment Methods">
       <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
