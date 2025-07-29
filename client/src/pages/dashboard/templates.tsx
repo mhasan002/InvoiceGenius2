@@ -140,6 +140,17 @@ export default function Templates() {
     }
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiRequest('DELETE', `/api/templates/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/templates'] });
+      toast({ title: "Template deleted successfully!" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete template", variant: "destructive" });
+    }
+  });
+
   const handleSelectTemplate = (template: TemplateConfig) => {
     const clonedTemplate = { ...template, id: `${template.id}_${Date.now()}` };
     setSelectedTemplate(clonedTemplate);
@@ -652,16 +663,27 @@ export default function Templates() {
                             >
                               Edit Template
                             </Button>
-                            {template.isDefault !== "true" && (
+                            <div className="flex gap-2">
+                              {template.isDefault !== "true" && (
+                                <Button 
+                                  onClick={() => setDefaultMutation.mutate(template.id)}
+                                  disabled={setDefaultMutation.isPending}
+                                  className="flex-1"
+                                  size="sm"
+                                >
+                                  {setDefaultMutation.isPending ? "Setting..." : "Set as Default"}
+                                </Button>
+                              )}
                               <Button 
-                                onClick={() => setDefaultMutation.mutate(template.id)}
-                                disabled={setDefaultMutation.isPending}
-                                className="w-full"
+                                onClick={() => deleteMutation.mutate(template.id)}
+                                disabled={deleteMutation.isPending}
+                                variant="destructive"
                                 size="sm"
+                                className={template.isDefault === "true" ? "w-full" : "flex-1"}
                               >
-                                {setDefaultMutation.isPending ? "Setting..." : "Set as Default"}
+                                {deleteMutation.isPending ? "Deleting..." : "Delete"}
                               </Button>
-                            )}
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
