@@ -195,15 +195,35 @@ export default function Company() {
     ));
   };
 
-  // Logo upload simulation (in a real app, you'd upload to a file storage service)
+  // Logo upload with base64 encoding for persistence
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // In a real app, you would upload to a service like Cloudinary, AWS S3, etc.
-      // For demo purposes, we'll create a blob URL
-      const blobUrl = URL.createObjectURL(file);
-      setLogoUrl(blobUrl);
-      toast({ title: "Logo Uploaded", description: "Logo has been uploaded successfully." });
+      // Validate file size (limit to 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast({ 
+          title: "File too large", 
+          description: "Please select an image smaller than 2MB.", 
+          variant: "destructive" 
+        });
+        return;
+      }
+
+      // Convert to base64 for persistent storage
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64Result = e.target?.result as string;
+        setLogoUrl(base64Result);
+        toast({ title: "Logo Uploaded", description: "Logo has been uploaded successfully." });
+      };
+      reader.onerror = () => {
+        toast({ 
+          title: "Upload failed", 
+          description: "Failed to process the image. Please try again.", 
+          variant: "destructive" 
+        });
+      };
+      reader.readAsDataURL(file);
     }
   };
 

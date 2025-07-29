@@ -667,7 +667,7 @@ export default function Templates() {
                         <CardContent>
                           <div className="aspect-[3/4] bg-gray-100 rounded-lg mb-4 overflow-hidden">
                             <div className="transform scale-[0.3] origin-top-left w-[333%] h-[333%]">
-                              {config.id?.includes("professional") ? (
+                              {config.name?.includes("Professional") || config.id?.includes("professional") ? (
                                 <ProfessionalPreview template={config} />
                               ) : (
                                 <MinimalistPreview template={config} />
