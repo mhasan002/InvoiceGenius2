@@ -375,16 +375,19 @@ export default function CreateInvoice() {
             </CardHeader>
             <CardContent>
               {defaultTemplate.name === "Minimalist Red" ? (
-                // Minimalist Red Template
+                // Minimalist Red Template with exact geometric design
                 <div data-invoice-preview className="bg-white shadow-lg rounded-lg max-w-4xl mx-auto relative overflow-hidden" 
                      style={{ color: defaultTemplate.config?.textColor || '#000', fontFamily: defaultTemplate.config?.fontFamily || 'inherit' }}>
-                  {/* Geometric Header */}
+                  {/* Geometric Header - Diagonal Red Design exactly like image */}
                   <div className="relative">
                     <div 
-                      className="absolute top-0 left-0 w-full h-24"
-                      style={{ backgroundColor: defaultTemplate.config?.primaryColor || '#DC2626' }}
+                      className="absolute top-0 left-0 w-full h-16"
+                      style={{ 
+                        backgroundColor: defaultTemplate.config?.primaryColor || '#991b1b',
+                        clipPath: 'polygon(0% 0%, 100% 0%, 85% 100%, 0% 100%)'
+                      }}
                     ></div>
-                    <div className="p-8 pt-16 relative z-10">
+                    <div className="p-8 pt-12 relative z-10">
                       {/* Logo and Company */}
                       <div className="mb-8">
                         <div className="flex items-center mb-2">
@@ -561,34 +564,15 @@ export default function CreateInvoice() {
                     </div>
                   </div>
                   
-                  {/* Geometric Footer Design - Position at absolute bottom */}
+                  {/* Geometric Footer Design - Exact Match with Image */}
                   <div className="absolute bottom-0 left-0 right-0">
-                    <div className="relative h-16 overflow-hidden">
-                      {/* Left diagonal section */}
+                    <div className="relative h-20 overflow-hidden">
+                      {/* Bottom geometric red design - full width diagonal */}
                       <div 
-                        className="absolute bottom-0 left-0 h-full"
+                        className="absolute bottom-0 left-0 w-full h-full"
                         style={{ 
-                          width: '62%',
                           backgroundColor: defaultTemplate.config?.primaryColor || '#991b1b',
-                          clipPath: 'polygon(0% 0%, 100% 0%, 85% 100%, 0% 100%)'
-                        }}
-                      ></div>
-                      {/* Right diagonal section */}
-                      <div 
-                        className="absolute bottom-0 right-0 h-full"
-                        style={{ 
-                          width: '45%',
-                          backgroundColor: defaultTemplate.config?.primaryColor || '#991b1b',
-                          clipPath: 'polygon(32% 0%, 100% 0%, 100% 100%, 12% 100%)'
-                        }}
-                      ></div>
-                      {/* White diagonal separator */}
-                      <div 
-                        className="absolute bottom-0 h-full bg-white"
-                        style={{ 
-                          left: '58%',
-                          width: '10%',
-                          clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)'
+                          clipPath: 'polygon(0% 30%, 100% 0%, 100% 100%, 0% 100%)'
                         }}
                       ></div>
                     </div>

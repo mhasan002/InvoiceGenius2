@@ -166,10 +166,7 @@ export default function Templates() {
 
   const updateTemplate = (updates: Partial<TemplateConfig>) => {
     if (editingTemplate) {
-      console.log('updateTemplate called with:', updates);
-      const updatedTemplate = { ...editingTemplate, ...updates };
-      console.log('Updated template:', updatedTemplate);
-      setEditingTemplate(updatedTemplate);
+      setEditingTemplate({ ...editingTemplate, ...updates });
     }
   };
 
@@ -642,7 +639,19 @@ export default function Templates() {
                 <h2 className="text-lg font-semibold mb-4">Your Saved Templates</h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {templates.map((template: Template) => {
-                    const config = template.config as TemplateConfig;
+                    // Properly merge database template with defaults, preserving all settings
+                    const defaultTemplate = defaultTemplates.find(t => t.name === template.name) || defaultTemplates[0];
+                    const dbConfig = template.config as any; // Cast to any to access properties
+                    const config = { 
+                      ...defaultTemplate, 
+                      ...dbConfig,
+                      // Explicitly preserve boolean values from database
+                      showTerms: dbConfig?.showTerms !== undefined ? Boolean(dbConfig.showTerms) : defaultTemplate.showTerms,
+                      showNotes: dbConfig?.showNotes !== undefined ? Boolean(dbConfig.showNotes) : defaultTemplate.showNotes,
+                      logoVisible: dbConfig?.logoVisible !== undefined ? Boolean(dbConfig.logoVisible) : defaultTemplate.logoVisible,
+                      showPayment: dbConfig?.showPayment !== undefined ? Boolean(dbConfig.showPayment) : defaultTemplate.showPayment,
+                      id: template.id // Use the database template ID
+                    } as TemplateConfig;
                     return (
                       <Card key={template.id} className="cursor-pointer hover:shadow-lg transition-shadow">
                         <CardHeader>
@@ -895,10 +904,7 @@ export default function Templates() {
                           <Label>Show Terms & Conditions</Label>
                           <Switch
                             checked={Boolean(editingTemplate?.showTerms)}
-                            onCheckedChange={(checked) => {
-                              console.log('showTerms toggle:', checked);
-                              updateTemplate({ showTerms: checked });
-                            }}
+                            onCheckedChange={(checked) => updateTemplate({ showTerms: checked })}
                           />
                         </div>
                         
