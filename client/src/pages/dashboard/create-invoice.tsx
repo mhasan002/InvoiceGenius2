@@ -699,11 +699,11 @@ export default function CreateInvoice() {
                 <FileText className="h-4 w-4 mr-2" />
                 {createInvoiceMutation.isPending ? 'Creating...' : 'Create Invoice'}
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={() => setShowPreview(!showPreview)}>
                 <Eye className="h-4 w-4 mr-2" />
                 Preview Invoice
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={handleDownloadPDF}>
                 <Download className="h-4 w-4 mr-2" />
                 Download PDF
               </Button>
