@@ -571,34 +571,24 @@ export default function CreateInvoice() {
                         Authorized Signed
                       </div>
                     </div>
-                    {/* Exact angular red footer design from template */}
-                    <div className="relative h-20 overflow-hidden">
-                      {/* Left angular shape */}
+                    {/* Exact angular red footer design matching template image */}
+                    <div className="relative h-16 overflow-hidden bg-gray-100">
+                      {/* Left diagonal section - covers about 60% of width */}
                       <div 
                         className="absolute bottom-0 left-0 h-full"
                         style={{ 
-                          width: '60%',
+                          width: '62%',
                           backgroundColor: defaultTemplate.config?.primaryColor || '#B91C1C',
-                          clipPath: 'polygon(0% 0%, 100% 0%, 85% 100%, 0% 100%)'
+                          clipPath: 'polygon(0% 0%, 100% 0%, 88% 100%, 0% 100%)'
                         }}
                       ></div>
-                      {/* Right angular shape */}
+                      {/* Right diagonal section - smaller piece on the right */}
                       <div 
                         className="absolute bottom-0 right-0 h-full"
                         style={{ 
-                          width: '40%',
+                          width: '45%',
                           backgroundColor: defaultTemplate.config?.primaryColor || '#B91C1C',
-                          clipPath: 'polygon(40% 0%, 100% 0%, 100% 100%, 20% 100%)'
-                        }}
-                      ></div>
-                      {/* Small connecting piece in middle */}
-                      <div 
-                        className="absolute bottom-0 h-full"
-                        style={{ 
-                          left: '50%',
-                          width: '15%',
-                          backgroundColor: defaultTemplate.config?.primaryColor || '#B91C1C',
-                          clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)'
+                          clipPath: 'polygon(35% 0%, 100% 0%, 100% 100%, 15% 100%)'
                         }}
                       ></div>
                     </div>

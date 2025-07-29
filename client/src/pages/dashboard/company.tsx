@@ -42,8 +42,22 @@ export default function Company() {
 
   // Profile mutations
   const createProfileMutation = useMutation({
-    mutationFn: (data: { name: string; email: string; address?: string; logoUrl?: string; tagline?: string; customFields: CustomField[] }) =>
-      apiRequest('/api/company-profiles', 'POST', data),
+    mutationFn: async (data: { name: string; email: string; address?: string; logoUrl?: string; tagline?: string; customFields: CustomField[] }) => {
+      const response = await fetch('/api/company-profiles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create profile');
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/company-profiles'] });
       resetForm();
@@ -56,15 +70,29 @@ export default function Company() {
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: (data: { id: string; name: string; email: string; address?: string; logoUrl?: string; tagline?: string; customFields: CustomField[] }) =>
-      apiRequest(`/api/company-profiles/${data.id}`, 'PUT', { 
-        name: data.name, 
-        email: data.email, 
-        address: data.address, 
-        logoUrl: data.logoUrl, 
-        tagline: data.tagline,
-        customFields: data.customFields 
-      }),
+    mutationFn: async (data: { id: string; name: string; email: string; address?: string; logoUrl?: string; tagline?: string; customFields: CustomField[] }) => {
+      const response = await fetch(`/api/company-profiles/${data.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          name: data.name, 
+          email: data.email, 
+          address: data.address, 
+          logoUrl: data.logoUrl, 
+          tagline: data.tagline,
+          customFields: data.customFields 
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/company-profiles'] });
       resetForm();
@@ -77,7 +105,18 @@ export default function Company() {
   });
 
   const deleteProfileMutation = useMutation({
-    mutationFn: (id: string) => apiRequest(`/api/company-profiles/${id}`, 'DELETE'),
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/company-profiles/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete profile');
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/company-profiles'] });
       toast({ title: "Success", description: "Company profile deleted successfully." });
