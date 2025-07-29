@@ -614,19 +614,7 @@ export default function CreateInvoice() {
                     </div>
                   </div>
                   
-                  {/* Geometric Footer Design - Exact Match with Image */}
-                  <div className="absolute bottom-0 left-0 right-0">
-                    <div className="relative h-20 overflow-hidden">
-                      {/* Bottom geometric red design - full width diagonal */}
-                      <div 
-                        className="absolute bottom-0 left-0 w-full h-full"
-                        style={{ 
-                          backgroundColor: defaultTemplate?.primaryColor || '#991b1b',
-                          clipPath: 'polygon(0% 30%, 100% 0%, 100% 100%, 0% 100%)'
-                        }}
-                      ></div>
-                    </div>
-                  </div>
+                  {/* Remove bottom geometric design as requested - keep only clean design like template preview */}
                 </div>
               ) : (
                 // Professional Template (default)
