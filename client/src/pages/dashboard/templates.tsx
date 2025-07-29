@@ -294,16 +294,21 @@ export default function Templates() {
 
       {/* Items Table */}
       <div className="mb-8">
-        <div className={`grid gap-4 p-3 text-sm font-medium`} style={{ backgroundColor: '#f3f4f6', gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
+        <div className={`grid gap-4 p-3 text-sm font-medium`} style={{ backgroundColor: '#f3f4f6', gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length + template.customFields.length}, 1fr)` }}>
           {template.fields.filter(f => f.visible).map(field => (
             <div key={field.id} className="uppercase">
               {field.customLabel || field.label}
             </div>
           ))}
+          {template.customFields.map((customField, index) => (
+            <div key={`custom-header-${index}`} className="uppercase">
+              {customField.name}
+            </div>
+          ))}
         </div>
         
         {[1, 2, 3, 4].map((item) => (
-          <div key={item} className={`grid gap-4 p-3 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
+          <div key={item} className={`grid gap-4 p-3 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length + template.customFields.length}, 1fr)` }}>
             {template.fields.filter(f => f.visible).map((field, index) => (
               <div key={field.id}>
                 {field.id === 'description' && 'YOUR DESCRIPTION'}
@@ -312,19 +317,15 @@ export default function Templates() {
                 {field.id === 'total' && '$ 50.00'}
               </div>
             ))}
-          </div>
-        ))}
-
-        {/* Include custom fields as table columns */}
-        {template.customFields.map((customField, index) => (
-          <div key={`custom-${index}`} className={`grid gap-4 p-3 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
-            {template.fields.filter(f => f.visible).map((field, fieldIndex) => (
-              <div key={field.id}>
-                {fieldIndex === 0 ? customField.name : (fieldIndex === template.fields.filter(f => f.visible).length - 1 ? customField.value : '-')}
+            {template.customFields.map((customField, index) => (
+              <div key={`custom-data-${index}`}>
+                {customField.value || '-'}
               </div>
             ))}
           </div>
         ))}
+
+
 
         {/* Totals */}
         <div className="mt-6 ml-auto w-64">
@@ -450,10 +451,15 @@ export default function Templates() {
 
           {/* Items Table */}
           <div className="mb-8">
-            <div className={`grid gap-4 pb-2 border-b-2`} style={{ borderColor: template.primaryColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
+            <div className={`grid gap-4 pb-2 border-b-2`} style={{ borderColor: template.primaryColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length + template.customFields.length}, 1fr)` }}>
               {template.fields.filter(f => f.visible).map(field => (
                 <div key={field.id} className="font-semibold text-sm uppercase">
                   {field.customLabel || field.label}
+                </div>
+              ))}
+              {template.customFields.map((customField, index) => (
+                <div key={`custom-header-${index}`} className="font-semibold text-sm uppercase">
+                  {customField.name}
                 </div>
               ))}
             </div>
@@ -466,7 +472,7 @@ export default function Templates() {
               { desc: "Brand photography", price: 100, qty: 1 },
               { desc: "Brand guide", price: 100, qty: 1 },
             ].map((item, idx) => (
-              <div key={idx} className={`grid gap-4 py-2 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
+              <div key={idx} className={`grid gap-4 py-2 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length + template.customFields.length}, 1fr)` }}>
                 {template.fields.filter(f => f.visible).map((field, index) => (
                   <div key={field.id}>
                     {field.id === 'description' && item.desc}
@@ -475,19 +481,15 @@ export default function Templates() {
                     {field.id === 'total' && `$${item.price * item.qty}`}
                   </div>
                 ))}
-              </div>
-            ))}
-
-            {/* Include custom fields as table columns */}
-            {template.customFields.map((customField, index) => (
-              <div key={`custom-${index}`} className={`grid gap-4 py-2 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
-                {template.fields.filter(f => f.visible).map((field, fieldIndex) => (
-                  <div key={field.id}>
-                    {fieldIndex === 0 ? customField.name : (fieldIndex === template.fields.filter(f => f.visible).length - 1 ? customField.value : '-')}
+                {template.customFields.map((customField, index) => (
+                  <div key={`custom-data-${index}`}>
+                    {customField.value || '-'}
                   </div>
                 ))}
               </div>
             ))}
+
+
 
             {/* Totals */}
             <div className="mt-6 ml-auto w-64">
