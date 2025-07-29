@@ -350,115 +350,105 @@ export default function CreateInvoice() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div data-invoice-preview className="bg-white p-8 shadow-lg rounded-lg max-w-4xl mx-auto" 
-                   style={{ 
-                     color: defaultTemplate.config?.textColor || '#000', 
-                     fontFamily: defaultTemplate.config?.fontFamily || 'inherit' 
-                   }}>
-                
-                {/* Professional Template Header */}
-                <div className="flex justify-between items-start mb-8">
-                  <div className="flex items-center gap-4">
-                    {defaultTemplate.config?.logoVisible && (
-                      <div className="w-12 h-12 rounded" 
-                           style={{ backgroundColor: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
-                        <svg viewBox="0 0 32 32" className="w-full h-full p-2 text-white">
-                          <path fill="currentColor" d="M16 8l8 8-8 8-8-8z"/>
-                        </svg>
+              {defaultTemplate.name === "Minimalist Red" ? (
+                // Minimalist Red Template
+                <div data-invoice-preview className="bg-white shadow-lg rounded-lg max-w-4xl mx-auto relative overflow-hidden" 
+                     style={{ color: defaultTemplate.config?.textColor || '#000', fontFamily: defaultTemplate.config?.fontFamily || 'inherit' }}>
+                  {/* Geometric Header */}
+                  <div className="relative">
+                    <div 
+                      className="absolute top-0 left-0 w-full h-24"
+                      style={{ backgroundColor: defaultTemplate.config?.primaryColor || '#DC2626' }}
+                    ></div>
+                    <div className="p-8 pt-16 relative z-10">
+                      {/* Logo and Company */}
+                      <div className="mb-8">
+                        <div className="flex items-center mb-2">
+                          {defaultTemplate.config?.logoVisible && selectedCompany?.logo ? (
+                            <img src={selectedCompany.logo} alt="Company Logo" className="w-8 h-8 mr-3 object-contain" />
+                          ) : defaultTemplate.config?.logoVisible && (
+                            <div className="w-8 h-8 mr-3" style={{ backgroundColor: defaultTemplate.config?.primaryColor }}>
+                              <svg viewBox="0 0 32 32" className="w-full h-full p-1 text-white">
+                                <path fill="currentColor" d="M16 8l8 8-8 8-8-8z"/>
+                              </svg>
+                            </div>
+                          )}
+                          <div>
+                            <h1 className="text-2xl font-bold">
+                              {selectedCompany?.companyName || 'Your Company Name'}
+                            </h1>
+                            <p className="text-sm text-gray-600">
+                              {selectedCompany?.tagline || 'Company Tagline'}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                    )}
-                    <div>
-                      <h1 className="text-4xl font-light tracking-wider mb-2" 
-                          style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
-                        INVOICE
-                      </h1>
-                      <p className="text-sm">
-                        INVOICE NUMBER • {invoiceNumber || 'Not specified'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right text-sm">
-                    <p><strong>DATE:</strong> {new Date().toLocaleDateString()}</p>
-                    <p><strong>DUE DATE:</strong> {new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}</p>
-                    {platform && <p><strong>PLATFORM:</strong> {platform}</p>}
-                  </div>
-                </div>
 
-                {/* Company and Client Information */}
-                <div className="grid grid-cols-2 gap-8 mb-8">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
-                      FROM:
-                    </h3>
-                    <div className="space-y-1">
-                      {selectedCompany ? (
-                        <>
-                          <p className="font-semibold text-lg">{selectedCompany.companyName}</p>
-                          <p>{selectedCompany.email}</p>
-                          <p>{selectedCompany.phone}</p>
-                          <p className="whitespace-pre-line">{selectedCompany.address}</p>
-                          {selectedCompany.website && <p>Website: {selectedCompany.website}</p>}
-                        </>
-                      ) : (
-                        <p className="text-gray-500">No company profile selected</p>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
-                      BILL TO:
-                    </h3>
-                    <div className="space-y-1">
-                      <p className="font-semibold text-lg">{clientName || 'Client Name'}</p>
-                      {clientEmail && <p>{clientEmail}</p>}
-                      {clientPhone && <p>{clientPhone}</p>}
-                      {clientAddress && <p className="whitespace-pre-line">{clientAddress}</p>}
-                      {clientCustomFields.map((field, idx) => field.value && (
-                        <p key={idx}><strong>{field.name}:</strong> {field.value}</p>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Payment Method Information */}
-                {selectedPayment && (
-                  <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-                    <h3 className="text-lg font-semibold mb-2" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
-                      PAYMENT DETAILS:
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p><strong>Method:</strong> {selectedPayment.type}</p>
-                        <p><strong>Account:</strong> {selectedPayment.accountDetails}</p>
+                      {/* Invoice Details */}
+                      <div className="grid grid-cols-2 gap-8 mb-8">
+                        <div>
+                          <h3 className="font-semibold mb-2">ISSUED TO:</h3>
+                          <div className="text-sm space-y-1">
+                            <p>{clientName || 'Client Name'}</p>
+                            {clientEmail && <p>{clientEmail}</p>}
+                            {clientPhone && <p>{clientPhone}</p>}
+                            {clientAddress && <p className="whitespace-pre-line">{clientAddress}</p>}
+                          </div>
+                          
+                          <h3 className="font-semibold mb-2 mt-4">PAY TO:</h3>
+                          <div className="text-sm space-y-1">
+                            {selectedPayment ? (
+                              <>
+                                <p>{selectedPayment.type}</p>
+                                <p>Account Name: {paymentReceivedBy || 'Company Account'}</p>
+                                <p>Account: {selectedPayment.accountDetails}</p>
+                                {selectedPayment.additionalInfo && <p>{selectedPayment.additionalInfo}</p>}
+                              </>
+                            ) : (
+                              <>
+                                <p>Payment Method Not Selected</p>
+                                <p>Account Name: {paymentReceivedBy || 'Company Account'}</p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm space-y-1">
+                            <p><strong>INVOICE NO:</strong> {invoiceNumber || 'Not specified'}</p>
+                            <p><strong>DATE:</strong> {new Date().toLocaleDateString()}</p>
+                            <p><strong>DUE DATE:</strong> {new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}</p>
+                            {platform && <p><strong>PLATFORM:</strong> {platform}</p>}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        {paymentReceivedBy && <p><strong>Payment To:</strong> {paymentReceivedBy}</p>}
-                        {selectedPayment.additionalInfo && <p><strong>Info:</strong> {selectedPayment.additionalInfo}</p>}
-                      </div>
-                    </div>
-                  </div>
-                )}
 
-                {/* Items Table */}
-                <div className="mb-8">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr style={{ backgroundColor: defaultTemplate.config?.secondaryColor || '#F3F4F6' }}>
-                        <th className="border px-4 py-3 text-left font-semibold">DESCRIPTION</th>
-                        <th className="border px-4 py-3 text-center font-semibold">QTY</th>
-                        <th className="border px-4 py-3 text-right font-semibold">RATE</th>
-                        <th className="border px-4 py-3 text-right font-semibold">AMOUNT</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {items.length > 0 ? items.map((item) => (
-                        <tr key={item.id}>
-                          <td className="border px-4 py-3">
+                      {/* Items Table */}
+                      <div className="mb-8">
+                        <div className="grid gap-4 pb-2 border-b-2 font-semibold text-sm uppercase" 
+                             style={{ 
+                               borderColor: defaultTemplate.config?.primaryColor,
+                               gridTemplateColumns: `2fr 1fr 1fr 1fr${defaultTemplate.config?.customFields?.length ? ' 1fr' : ''}` 
+                             }}>
+                          <div>DESCRIPTION</div>
+                          <div className="text-center">QTY</div>
+                          <div className="text-right">RATE</div>
+                          <div className="text-right">AMOUNT</div>
+                          {defaultTemplate.config?.customFields?.map((field, idx) => (
+                            <div key={idx} className="text-center">{field.name.toUpperCase()}</div>
+                          ))}
+                        </div>
+                        
+                        {items.length > 0 ? items.map((item) => (
+                          <div key={item.id} className="grid gap-4 py-3 text-sm border-b" 
+                               style={{ 
+                                 borderColor: '#E5E7EB',
+                                 gridTemplateColumns: `2fr 1fr 1fr 1fr${defaultTemplate.config?.customFields?.length ? ' 1fr' : ''}` 
+                               }}>
                             <div>
-                              <p className="font-medium">{item.name}</p>
+                              <p>{item.name}</p>
                               {item.type === 'package' && item.packageServices && (
-                                <div className="text-sm text-gray-600 mt-1">
-                                  <p className="font-medium">Package includes:</p>
+                                <div className="text-xs text-gray-600 mt-1">
+                                  <p>Package includes:</p>
                                   <ul className="list-disc list-inside ml-2">
                                     {item.packageServices.map((service, idx) => (
                                       <li key={idx}>{service.name} {service.quantity && `(${service.quantity})`}</li>
@@ -467,92 +457,252 @@ export default function CreateInvoice() {
                                 </div>
                               )}
                               {item.timePeriod && item.timePeriod > 1 && (
-                                <p className="text-sm text-gray-600">Duration: {item.timePeriod} month{item.timePeriod > 1 ? 's' : ''}</p>
+                                <p className="text-xs text-gray-600">Duration: {item.timePeriod} month{item.timePeriod > 1 ? 's' : ''}</p>
                               )}
                             </div>
-                          </td>
-                          <td className="border px-4 py-3 text-center">{item.quantity}</td>
-                          <td className="border px-4 py-3 text-right">${item.unitPrice.toFixed(2)}</td>
-                          <td className="border px-4 py-3 text-right font-medium">${item.total.toFixed(2)}</td>
-                        </tr>
-                      )) : (
-                        <tr>
-                          <td colSpan={4} className="border px-4 py-8 text-center text-gray-500">
+                            <div className="text-center">{item.quantity}</div>
+                            <div className="text-right">${item.unitPrice.toFixed(2)}</div>
+                            <div className="text-right">${item.total.toFixed(2)}</div>
+                            {defaultTemplate.config?.customFields?.map((field, idx) => (
+                              <div key={idx} className="text-center">{field.value || '-'}</div>
+                            ))}
+                          </div>
+                        )) : (
+                          <div className="py-8 text-center text-gray-500">
                             No items added to invoice
-                          </td>
-                        </tr>
+                          </div>
+                        )}
+
+                        {/* Totals */}
+                        <div className="mt-6 ml-auto w-64">
+                          <div className="flex justify-between py-2">
+                            <span><strong>Subtotal:</strong></span>
+                            <span>${subtotal.toFixed(2)}</span>
+                          </div>
+                          {taxPercentage > 0 && (
+                            <div className="flex justify-between py-2">
+                              <span><strong>Tax ({taxPercentage}%):</strong></span>
+                              <span>${taxAmount.toFixed(2)}</span>
+                            </div>
+                          )}
+                          {discountValue > 0 && (
+                            <div className="flex justify-between py-2 text-red-600">
+                              <span><strong>Discount ({discountType === 'percentage' ? `${discountValue}%` : `$${discountValue}`}):</strong></span>
+                              <span>-${discountAmount.toFixed(2)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between py-2 font-bold px-3 py-2" 
+                               style={{ backgroundColor: defaultTemplate.config?.primaryColor, color: 'white' }}>
+                            <span>TOTAL:</span>
+                            <span>${total.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Notes and Terms */}
+                      {(showNotes && notes) && (
+                        <div className="mb-6">
+                          <h4 className="font-semibold mb-2">NOTES:</h4>
+                          <p className="whitespace-pre-line text-sm">{notes}</p>
+                        </div>
                       )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Totals Section */}
-                <div className="flex justify-end mb-8">
-                  <div className="w-80 space-y-3">
-                    <div className="flex justify-between py-2">
-                      <span className="font-medium">Subtotal:</span>
-                      <span className="font-medium">${subtotal.toFixed(2)}</span>
-                    </div>
-                    {taxPercentage > 0 && (
-                      <div className="flex justify-between py-2">
-                        <span>Tax ({taxPercentage}%):</span>
-                        <span>${taxAmount.toFixed(2)}</span>
-                      </div>
-                    )}
-                    {discountValue > 0 && (
-                      <div className="flex justify-between py-2 text-red-600">
-                        <span>
-                          Discount ({discountType === 'percentage' ? `${discountValue}%` : `$${discountValue}`}):
-                        </span>
-                        <span>-${discountAmount.toFixed(2)}</span>
-                      </div>
-                    )}
-                    <div className="border-t pt-3">
-                      <div className="flex justify-between py-2">
-                        <span className="text-xl font-bold" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
-                          TOTAL:
-                        </span>
-                        <span className="text-xl font-bold" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
-                          ${total.toFixed(2)}
-                        </span>
-                      </div>
+                      
+                      {(showTerms && terms) && (
+                        <div className="mb-6">
+                          <h4 className="font-semibold mb-2">TERMS & CONDITIONS:</h4>
+                          <p className="whitespace-pre-line text-sm">{terms}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-
-                {/* Notes and Terms */}
-                {(showNotes && notes) && (
-                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-semibold mb-2" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
-                      NOTES:
-                    </h4>
-                    <p className="whitespace-pre-line text-sm">{notes}</p>
+              ) : (
+                // Professional Template (default)
+                <div data-invoice-preview className="bg-white p-8 shadow-lg rounded-lg max-w-4xl mx-auto" 
+                     style={{ color: defaultTemplate.config?.textColor || '#000', fontFamily: defaultTemplate.config?.fontFamily || 'inherit' }}>
+                  
+                  {/* Header */}
+                  <div className="flex justify-between items-start mb-8">
+                    <div className="flex items-center gap-4">
+                      {defaultTemplate.config?.logoVisible && selectedCompany?.logo ? (
+                        <img src={selectedCompany.logo} alt="Company Logo" className="w-12 h-12 object-contain" />
+                      ) : defaultTemplate.config?.logoVisible && (
+                        <div className="w-12 h-12" style={{ backgroundColor: defaultTemplate.config?.primaryColor }}>
+                          <svg viewBox="0 0 32 32" className="w-full h-full p-2 text-white">
+                            <path fill="currentColor" d="M16 8l8 8-8 8-8-8z"/>
+                          </svg>
+                        </div>
+                      )}
+                      <div>
+                        <h1 className="text-4xl font-light tracking-wider mb-2" 
+                            style={{ color: defaultTemplate.config?.primaryColor }}>
+                          INVOICE
+                        </h1>
+                        <p className="text-sm">
+                          INVOICE NUMBER • {invoiceNumber || 'Not specified'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right text-sm">
+                      <p><strong>DATE:</strong> {new Date().toLocaleDateString()}</p>
+                      <p><strong>DUE DATE:</strong> {new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}</p>
+                      {platform && <p><strong>PLATFORM:</strong> {platform}</p>}
+                    </div>
                   </div>
-                )}
-                
-                {(showTerms && terms) && (
-                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-semibold mb-2" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
-                      TERMS & CONDITIONS:
-                    </h4>
-                    <p className="whitespace-pre-line text-sm">{terms}</p>
-                  </div>
-                )}
 
-                {/* Custom Fields from Template */}
-                {defaultTemplate.config?.customFields && defaultTemplate.config.customFields.length > 0 && (
-                  <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-semibold mb-2" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
-                      ADDITIONAL INFORMATION:
-                    </h4>
-                    <div className="space-y-1 text-sm">
-                      {defaultTemplate.config.customFields.map((field, idx) => field.value && (
-                        <p key={idx}><strong>{field.name}:</strong> {field.value}</p>
+                  {/* Company and Client Information */}
+                  <div className="grid grid-cols-2 gap-8 mb-6">
+                    <div>
+                      <p><strong>FROM:</strong></p>
+                      <div className="text-sm space-y-1">
+                        {selectedCompany ? (
+                          <>
+                            <p>{selectedCompany.companyName}</p>
+                            <p>{selectedCompany.email}</p>
+                            <p>{selectedCompany.phone}</p>
+                            <p className="whitespace-pre-line">{selectedCompany.address}</p>
+                            {selectedCompany.website && <p>Website: {selectedCompany.website}</p>}
+                          </>
+                        ) : (
+                          <p className="text-gray-500">No company profile selected</p>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <p><strong>BILL TO:</strong></p>
+                      <div className="text-sm space-y-1">
+                        <p>{clientName || 'Client Name'}</p>
+                        {clientEmail && <p>{clientEmail}</p>}
+                        {clientPhone && <p>{clientPhone}</p>}
+                        {clientAddress && <p className="whitespace-pre-line">{clientAddress}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <p><strong>DATE:</strong> {new Date().toLocaleDateString()}</p>
+                    <hr className="mt-2" style={{ borderColor: defaultTemplate.config?.borderColor || '#E5E7EB' }} />
+                  </div>
+
+                  {/* Payment Information */}
+                  {selectedPayment && defaultTemplate.config?.showPayment && (
+                    <div className="mt-8 p-4 border rounded-lg mb-6" style={{ borderColor: defaultTemplate.config?.borderColor }}>
+                      <h4 className="font-semibold mb-3" style={{ color: defaultTemplate.config?.primaryColor }}>PAYMENT INFORMATION</h4>
+                      <div className="grid grid-cols-2 gap-6 text-sm">
+                        <div>
+                          <p><strong>Payment Method:</strong> {selectedPayment.type}</p>
+                          <p><strong>Account Details:</strong> {selectedPayment.accountDetails}</p>
+                          {paymentReceivedBy && <p><strong>Payment To:</strong> {paymentReceivedBy}</p>}
+                        </div>
+                        <div>
+                          {selectedPayment.additionalInfo && <p><strong>Additional Info:</strong> {selectedPayment.additionalInfo}</p>}
+                          <p><strong>Payment Due:</strong> 30 days</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Items Table */}
+                  <div className="mb-8">
+                    <div className="grid gap-4 p-3 text-sm font-medium" 
+                         style={{ 
+                           backgroundColor: defaultTemplate.config?.secondaryColor || '#f3f4f6',
+                           gridTemplateColumns: `2fr 1fr 1fr 1fr${defaultTemplate.config?.customFields?.length ? ' 1fr' : ''}` 
+                         }}>
+                      <div className="uppercase">DESCRIPTION</div>
+                      <div className="uppercase text-center">QTY</div>
+                      <div className="uppercase text-right">RATE</div>
+                      <div className="uppercase text-right">AMOUNT</div>
+                      {defaultTemplate.config?.customFields?.map((field, idx) => (
+                        <div key={idx} className="uppercase text-center">{field.name}</div>
                       ))}
                     </div>
+                    
+                    {items.length > 0 ? items.map((item) => (
+                      <div key={item.id} className="grid gap-4 p-3 text-sm border-b" 
+                           style={{ 
+                             borderColor: defaultTemplate.config?.borderColor,
+                             gridTemplateColumns: `2fr 1fr 1fr 1fr${defaultTemplate.config?.customFields?.length ? ' 1fr' : ''}` 
+                           }}>
+                        <div>
+                          <p>{item.name}</p>
+                          {item.type === 'package' && item.packageServices && (
+                            <div className="text-xs text-gray-600 mt-1">
+                              <p>Package includes:</p>
+                              <ul className="list-disc list-inside ml-2">
+                                {item.packageServices.map((service, idx) => (
+                                  <li key={idx}>{service.name} {service.quantity && `(${service.quantity})`}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {item.timePeriod && item.timePeriod > 1 && (
+                            <p className="text-xs text-gray-600">Duration: {item.timePeriod} month{item.timePeriod > 1 ? 's' : ''}</p>
+                          )}
+                        </div>
+                        <div className="text-center">{item.quantity}</div>
+                        <div className="text-right">${item.unitPrice.toFixed(2)}</div>
+                        <div className="text-right">${item.total.toFixed(2)}</div>
+                        {defaultTemplate.config?.customFields?.map((field, idx) => (
+                          <div key={idx} className="text-center">{field.value || '-'}</div>
+                        ))}
+                      </div>
+                    )) : (
+                      <div className="p-8 text-center text-gray-500">
+                        No items added to invoice
+                      </div>
+                    )}
+
+                    {/* Totals */}
+                    <div className="mt-6 ml-auto w-64">
+                      <div className="flex justify-between py-2">
+                        <span><strong>SUB-TOTAL:</strong></span>
+                        <span>${subtotal.toFixed(2)}</span>
+                      </div>
+                      {taxPercentage > 0 && (
+                        <div className="flex justify-between py-2">
+                          <span><strong>TAX ({taxPercentage}%):</strong></span>
+                          <span>${taxAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {discountValue > 0 && (
+                        <div className="flex justify-between py-2">
+                          <span><strong>DISCOUNT ({discountType === 'percentage' ? `${discountValue}%` : `$${discountValue}`}):</strong></span>
+                          <span>${discountAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between py-2 font-bold px-3 py-2" 
+                           style={{ backgroundColor: defaultTemplate.config?.borderColor }}>
+                        <span>TOTAL DUE</span>
+                        <span>${total.toFixed(2)}</span>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Footer */}
+                  <div className="grid grid-cols-2 gap-8 mt-8">
+                    <div>
+                      {(showNotes && notes) && (
+                        <div className="text-sm">
+                          <h4 className="font-semibold mb-2">NOTES:</h4>
+                          <div className="whitespace-pre-line">{notes}</div>
+                        </div>
+                      )}
+                      {(showTerms && terms) && (
+                        <div className="text-sm mt-4">
+                          <h4 className="font-semibold mb-2">TERMS & CONDITIONS:</h4>
+                          <div className="whitespace-pre-line">{terms}</div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <h2 className="text-4xl font-light tracking-wider" style={{ color: defaultTemplate.config?.primaryColor }}>
+                        THANK<br />YOU
+                      </h2>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
