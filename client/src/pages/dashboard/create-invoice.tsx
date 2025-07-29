@@ -561,9 +561,9 @@ export default function CreateInvoice() {
                     </div>
                   </div>
                   
-                  {/* Geometric Footer Design - Red Angular Design */}
+                  {/* Geometric Footer Design - Red Angular Design matching template */}
                   <div className="relative mt-8">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-4">
                       <div className="text-sm text-gray-600">
                         Thank you for your business!
                       </div>
@@ -571,19 +571,34 @@ export default function CreateInvoice() {
                         Authorized Signed
                       </div>
                     </div>
-                    {/* Angular red footer design */}
-                    <div className="relative mt-4 h-16 overflow-hidden">
+                    {/* Exact angular red footer design from template */}
+                    <div className="relative h-20 overflow-hidden">
+                      {/* Left angular shape */}
                       <div 
-                        className="absolute bottom-0 left-0 w-full h-full"
+                        className="absolute bottom-0 left-0 h-full"
                         style={{ 
-                          background: `linear-gradient(135deg, ${defaultTemplate.config?.primaryColor || '#DC2626'} 0%, ${defaultTemplate.config?.primaryColor || '#DC2626'} 60%, transparent 60%)`
+                          width: '60%',
+                          backgroundColor: defaultTemplate.config?.primaryColor || '#B91C1C',
+                          clipPath: 'polygon(0% 0%, 100% 0%, 85% 100%, 0% 100%)'
                         }}
                       ></div>
+                      {/* Right angular shape */}
                       <div 
-                        className="absolute bottom-0 right-0 w-1/3 h-full"
+                        className="absolute bottom-0 right-0 h-full"
                         style={{ 
-                          backgroundColor: defaultTemplate.config?.primaryColor || '#DC2626',
-                          clipPath: 'polygon(30% 0%, 100% 0%, 100% 100%, 0% 100%)'
+                          width: '40%',
+                          backgroundColor: defaultTemplate.config?.primaryColor || '#B91C1C',
+                          clipPath: 'polygon(40% 0%, 100% 0%, 100% 100%, 20% 100%)'
+                        }}
+                      ></div>
+                      {/* Small connecting piece in middle */}
+                      <div 
+                        className="absolute bottom-0 h-full"
+                        style={{ 
+                          left: '50%',
+                          width: '15%',
+                          backgroundColor: defaultTemplate.config?.primaryColor || '#B91C1C',
+                          clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)'
                         }}
                       ></div>
                     </div>
