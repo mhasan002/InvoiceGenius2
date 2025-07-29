@@ -205,14 +205,36 @@ export default function Templates() {
     }
   };
 
-  const handleUseTemplate = () => {
+  const handleUseTemplate = async () => {
     if (!editingTemplate) return;
-    // Only call API for saved templates, not default ones
-    if (!editingTemplate.id.includes('_')) {
-      setDefaultMutation.mutate(editingTemplate.id);
+    
+    // Check if it's a new template (has timestamp suffix) or existing template
+    if (editingTemplate.id.includes('_')) {
+      // For new/modified templates, save first then set as default
+      const templateData = {
+        name: editingTemplate.name,
+        description: editingTemplate.description,
+        config: editingTemplate
+      };
+      
+      try {
+        // Create the template first
+        const response = await apiRequest('POST', '/api/templates', templateData);
+        const newTemplate = await response.json();
+        
+        // Then set as default
+        await apiRequest('POST', `/api/templates/${newTemplate.id}/set-default`, {});
+        
+        // Update queries and show success
+        queryClient.invalidateQueries({ queryKey: ['/api/templates'] });
+        toast({ title: "Template saved and set as default!" });
+        setSelectedTemplate(null);
+      } catch (error) {
+        toast({ title: "Failed to save and use template", variant: "destructive" });
+      }
     } else {
-      // For new templates, save first then set as default
-      handleSaveTemplate();
+      // For existing saved templates, just set as default
+      setDefaultMutation.mutate(editingTemplate.id);
     }
   };
 
@@ -293,40 +315,34 @@ export default function Templates() {
           </div>
         ))}
 
-        {/* Totals and Custom Fields Side by Side */}
-        <div className="mt-6 flex justify-end gap-8">
-          {/* Custom Fields Column */}
-          {template.customFields.length > 0 && (
-            <div className="w-48">
-              <div className="space-y-2">
-                {template.customFields.map((customField, index) => (
-                  <div key={`custom-${index}`} className="flex justify-between py-1 text-sm">
-                    <span><strong>{customField.name}</strong></span>
-                    <span>{customField.value || '-'}</span>
-                  </div>
-                ))}
+        {/* Include custom fields as table columns */}
+        {template.customFields.map((customField, index) => (
+          <div key={`custom-${index}`} className={`grid gap-4 p-3 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
+            {template.fields.filter(f => f.visible).map((field, fieldIndex) => (
+              <div key={field.id}>
+                {fieldIndex === 0 ? customField.name : (fieldIndex === template.fields.filter(f => f.visible).length - 1 ? customField.value : '-')}
               </div>
-            </div>
-          )}
-          
-          {/* Totals Column */}
-          <div className="w-64">
-            <div className="flex justify-between py-2">
-              <span><strong>SUB-TOTAL:</strong></span>
-              <span>$ 200.00</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span><strong>TAX (10%):</strong></span>
-              <span>$ 20.00</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span><strong>PACKAGE DISCOUNT (0%):</strong></span>
-              <span>$ 0.00</span>
-            </div>
-            <div className="flex justify-between py-2 font-bold px-3 py-2" style={{ backgroundColor: template.borderColor }}>
-              <span>TOTAL DUE</span>
-              <span>$ 220.00</span>
-            </div>
+            ))}
+          </div>
+        ))}
+
+        {/* Totals */}
+        <div className="mt-6 ml-auto w-64">
+          <div className="flex justify-between py-2">
+            <span><strong>SUB-TOTAL:</strong></span>
+            <span>$ 200.00</span>
+          </div>
+          <div className="flex justify-between py-2">
+            <span><strong>TAX (10%):</strong></span>
+            <span>$ 20.00</span>
+          </div>
+          <div className="flex justify-between py-2">
+            <span><strong>PACKAGE DISCOUNT (0%):</strong></span>
+            <span>$ 0.00</span>
+          </div>
+          <div className="flex justify-between py-2 font-bold px-3 py-2" style={{ backgroundColor: template.borderColor }}>
+            <span>TOTAL DUE</span>
+            <span>$ 220.00</span>
           </div>
         </div>
       </div>
@@ -462,38 +478,32 @@ export default function Templates() {
               </div>
             ))}
 
-            {/* Totals and Custom Fields Side by Side */}
-            <div className="mt-6 flex justify-end gap-8">
-              {/* Custom Fields Column */}
-              {template.customFields.length > 0 && (
-                <div className="w-48">
-                  <div className="space-y-1">
-                    {template.customFields.map((customField, index) => (
-                      <div key={`custom-${index}`} className="flex justify-between py-1 text-sm">
-                        <span><strong>{customField.name}</strong></span>
-                        <span>{customField.value || '-'}</span>
-                      </div>
-                    ))}
+            {/* Include custom fields as table columns */}
+            {template.customFields.map((customField, index) => (
+              <div key={`custom-${index}`} className={`grid gap-4 py-2 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
+                {template.fields.filter(f => f.visible).map((field, fieldIndex) => (
+                  <div key={field.id}>
+                    {fieldIndex === 0 ? customField.name : (fieldIndex === template.fields.filter(f => f.visible).length - 1 ? customField.value : '-')}
                   </div>
+                ))}
+              </div>
+            ))}
+
+            {/* Totals */}
+            <div className="mt-6 ml-auto w-64">
+              <hr className="mb-2" style={{ borderColor: template.primaryColor }} />
+              <div className="text-right space-y-1">
+                <div className="flex justify-between py-1">
+                  <span><strong>SUBTOTAL</strong></span>
+                  <span>$400</span>
                 </div>
-              )}
-              
-              {/* Totals Column */}
-              <div className="w-64">
-                <hr className="mb-2" style={{ borderColor: template.primaryColor }} />
-                <div className="text-right space-y-1">
-                  <div className="flex justify-between py-1">
-                    <span><strong>SUBTOTAL</strong></span>
-                    <span>$400</span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span>Tax 10%</span>
-                    <span>$40</span>
-                  </div>
-                  <div className="flex justify-between font-bold py-1">
-                    <span><strong>TOTAL</strong></span>
-                    <span>$440</span>
-                  </div>
+                <div className="flex justify-between py-1">
+                  <span>Tax 10%</span>
+                  <span>$40</span>
+                </div>
+                <div className="flex justify-between font-bold py-1">
+                  <span><strong>TOTAL</strong></span>
+                  <span>$440</span>
                 </div>
               </div>
             </div>
