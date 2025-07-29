@@ -364,8 +364,8 @@ export default function CreateInvoice() {
                       {/* Logo and Company */}
                       <div className="mb-8">
                         <div className="flex items-center mb-2">
-                          {defaultTemplate.config?.logoVisible && selectedCompany?.logo ? (
-                            <img src={selectedCompany.logo} alt="Company Logo" className="w-8 h-8 mr-3 object-contain" />
+                          {defaultTemplate.config?.logoVisible && selectedCompany?.logoUrl ? (
+                            <img src={selectedCompany.logoUrl} alt="Company Logo" className="w-8 h-8 mr-3 object-contain" />
                           ) : defaultTemplate.config?.logoVisible && (
                             <div className="w-8 h-8 mr-3" style={{ backgroundColor: defaultTemplate.config?.primaryColor }}>
                               <svg viewBox="0 0 32 32" className="w-full h-full p-1 text-white">
@@ -375,7 +375,7 @@ export default function CreateInvoice() {
                           )}
                           <div>
                             <h1 className="text-2xl font-bold">
-                              {selectedCompany?.companyName || 'Your Company Name'}
+                              {selectedCompany?.name || 'Your Company Name'}
                             </h1>
                             <p className="text-sm text-gray-600">
                               {selectedCompany?.tagline || 'Company Tagline'}
@@ -397,17 +397,17 @@ export default function CreateInvoice() {
                           
                           <h3 className="font-semibold mb-2 mt-4">PAY TO:</h3>
                           <div className="text-sm space-y-1">
-                            {selectedPayment ? (
+                            {selectedCompany ? (
                               <>
-                                <p>{selectedPayment.type}</p>
-                                <p>Account Name: {paymentReceivedBy || 'Company Account'}</p>
-                                <p>Account: {selectedPayment.accountDetails}</p>
-                                {selectedPayment.additionalInfo && <p>{selectedPayment.additionalInfo}</p>}
+                                <p>{selectedCompany.name}</p>
+                                <p>{selectedCompany.email}</p>
+                                <p className="whitespace-pre-line">{selectedCompany.address}</p>
+                                <p>Payment To: {paymentReceivedBy || 'Company Account'}</p>
                               </>
                             ) : (
                               <>
-                                <p>Payment Method Not Selected</p>
-                                <p>Account Name: {paymentReceivedBy || 'Company Account'}</p>
+                                <p>No Company Profile Selected</p>
+                                <p>Payment To: {paymentReceivedBy || 'Company Account'}</p>
                               </>
                             )}
                           </div>
@@ -416,7 +416,6 @@ export default function CreateInvoice() {
                           <div className="text-sm space-y-1">
                             <p><strong>INVOICE NO:</strong> {invoiceNumber || 'Not specified'}</p>
                             <p><strong>DATE:</strong> {new Date().toLocaleDateString()}</p>
-                            <p><strong>DUE DATE:</strong> {new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}</p>
                             {platform && <p><strong>PLATFORM:</strong> {platform}</p>}
                           </div>
                         </div>
@@ -427,7 +426,7 @@ export default function CreateInvoice() {
                         <div className="grid gap-4 pb-2 border-b-2 font-semibold text-sm uppercase" 
                              style={{ 
                                borderColor: defaultTemplate.config?.primaryColor,
-                               gridTemplateColumns: `2fr 1fr 1fr 1fr${defaultTemplate.config?.customFields?.length ? ' 1fr' : ''}` 
+                               gridTemplateColumns: defaultTemplate.config?.customFields?.length > 0 ? `2fr 1fr 1fr 1fr 1fr` : `2fr 1fr 1fr 1fr`
                              }}>
                           <div>DESCRIPTION</div>
                           <div className="text-center">QTY</div>
@@ -442,7 +441,7 @@ export default function CreateInvoice() {
                           <div key={item.id} className="grid gap-4 py-3 text-sm border-b" 
                                style={{ 
                                  borderColor: '#E5E7EB',
-                                 gridTemplateColumns: `2fr 1fr 1fr 1fr${defaultTemplate.config?.customFields?.length ? ' 1fr' : ''}` 
+                                 gridTemplateColumns: defaultTemplate.config?.customFields?.length > 0 ? `2fr 1fr 1fr 1fr 1fr` : `2fr 1fr 1fr 1fr`
                                }}>
                             <div>
                               <p>{item.name}</p>
@@ -463,9 +462,13 @@ export default function CreateInvoice() {
                             <div className="text-center">{item.quantity}</div>
                             <div className="text-right">${item.unitPrice.toFixed(2)}</div>
                             <div className="text-right">${item.total.toFixed(2)}</div>
-                            {defaultTemplate.config?.customFields?.map((field, idx) => (
-                              <div key={idx} className="text-center">{field.value || '-'}</div>
-                            ))}
+                            {defaultTemplate.config?.customFields?.map((field, idx) => {
+                              // Get custom field value from clientCustomFields
+                              const customFieldValue = clientCustomFields.find(cf => cf.name === field.name)?.value || field.value || '-';
+                              return (
+                                <div key={idx} className="text-center">{customFieldValue}</div>
+                              );
+                            })}
                           </div>
                         )) : (
                           <div className="py-8 text-center text-gray-500">
@@ -524,8 +527,8 @@ export default function CreateInvoice() {
                   {/* Header */}
                   <div className="flex justify-between items-start mb-8">
                     <div className="flex items-center gap-4">
-                      {defaultTemplate.config?.logoVisible && selectedCompany?.logo ? (
-                        <img src={selectedCompany.logo} alt="Company Logo" className="w-12 h-12 object-contain" />
+                      {defaultTemplate.config?.logoVisible && selectedCompany?.logoUrl ? (
+                        <img src={selectedCompany.logoUrl} alt="Company Logo" className="w-12 h-12 object-contain" />
                       ) : defaultTemplate.config?.logoVisible && (
                         <div className="w-12 h-12" style={{ backgroundColor: defaultTemplate.config?.primaryColor }}>
                           <svg viewBox="0 0 32 32" className="w-full h-full p-2 text-white">
@@ -545,7 +548,7 @@ export default function CreateInvoice() {
                     </div>
                     <div className="text-right text-sm">
                       <p><strong>DATE:</strong> {new Date().toLocaleDateString()}</p>
-                      <p><strong>DUE DATE:</strong> {new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}</p>
+                      <p><strong>INVOICE NUMBER:</strong> {invoiceNumber || 'Not specified'}</p>
                       {platform && <p><strong>PLATFORM:</strong> {platform}</p>}
                     </div>
                   </div>
@@ -557,11 +560,9 @@ export default function CreateInvoice() {
                       <div className="text-sm space-y-1">
                         {selectedCompany ? (
                           <>
-                            <p>{selectedCompany.companyName}</p>
+                            <p>{selectedCompany.name}</p>
                             <p>{selectedCompany.email}</p>
-                            <p>{selectedCompany.phone}</p>
                             <p className="whitespace-pre-line">{selectedCompany.address}</p>
-                            {selectedCompany.website && <p>Website: {selectedCompany.website}</p>}
                           </>
                         ) : (
                           <p className="text-gray-500">No company profile selected</p>
@@ -579,24 +580,19 @@ export default function CreateInvoice() {
                     </div>
                   </div>
 
-                  <div className="mb-6">
-                    <p><strong>DATE:</strong> {new Date().toLocaleDateString()}</p>
-                    <hr className="mt-2" style={{ borderColor: defaultTemplate.config?.borderColor || '#E5E7EB' }} />
-                  </div>
-
-                  {/* Payment Information */}
-                  {selectedPayment && defaultTemplate.config?.showPayment && (
+                  {/* Payment Information - Positioned according to template design */}
+                  {selectedPayment && (
                     <div className="mt-8 p-4 border rounded-lg mb-6" style={{ borderColor: defaultTemplate.config?.borderColor }}>
                       <h4 className="font-semibold mb-3" style={{ color: defaultTemplate.config?.primaryColor }}>PAYMENT INFORMATION</h4>
                       <div className="grid grid-cols-2 gap-6 text-sm">
                         <div>
                           <p><strong>Payment Method:</strong> {selectedPayment.type}</p>
-                          <p><strong>Account Details:</strong> {selectedPayment.accountDetails}</p>
-                          {paymentReceivedBy && <p><strong>Payment To:</strong> {paymentReceivedBy}</p>}
+                          {selectedPayment.fields && Object.entries(selectedPayment.fields).map(([key, value]) => (
+                            <p key={key}><strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong> {value}</p>
+                          ))}
                         </div>
                         <div>
-                          {selectedPayment.additionalInfo && <p><strong>Additional Info:</strong> {selectedPayment.additionalInfo}</p>}
-                          <p><strong>Payment Due:</strong> 30 days</p>
+                          {paymentReceivedBy && <p><strong>Payment To:</strong> {paymentReceivedBy}</p>}
                         </div>
                       </div>
                     </div>
@@ -607,7 +603,7 @@ export default function CreateInvoice() {
                     <div className="grid gap-4 p-3 text-sm font-medium" 
                          style={{ 
                            backgroundColor: defaultTemplate.config?.secondaryColor || '#f3f4f6',
-                           gridTemplateColumns: `2fr 1fr 1fr 1fr${defaultTemplate.config?.customFields?.length ? ' 1fr' : ''}` 
+                           gridTemplateColumns: defaultTemplate.config?.customFields?.length > 0 ? `2fr 1fr 1fr 1fr 1fr` : `2fr 1fr 1fr 1fr`
                          }}>
                       <div className="uppercase">DESCRIPTION</div>
                       <div className="uppercase text-center">QTY</div>
@@ -622,7 +618,7 @@ export default function CreateInvoice() {
                       <div key={item.id} className="grid gap-4 p-3 text-sm border-b" 
                            style={{ 
                              borderColor: defaultTemplate.config?.borderColor,
-                             gridTemplateColumns: `2fr 1fr 1fr 1fr${defaultTemplate.config?.customFields?.length ? ' 1fr' : ''}` 
+                             gridTemplateColumns: defaultTemplate.config?.customFields?.length > 0 ? `2fr 1fr 1fr 1fr 1fr` : `2fr 1fr 1fr 1fr`
                            }}>
                         <div>
                           <p>{item.name}</p>
@@ -643,9 +639,13 @@ export default function CreateInvoice() {
                         <div className="text-center">{item.quantity}</div>
                         <div className="text-right">${item.unitPrice.toFixed(2)}</div>
                         <div className="text-right">${item.total.toFixed(2)}</div>
-                        {defaultTemplate.config?.customFields?.map((field, idx) => (
-                          <div key={idx} className="text-center">{field.value || '-'}</div>
-                        ))}
+                        {defaultTemplate.config?.customFields?.map((field, idx) => {
+                          // Get custom field value from clientCustomFields
+                          const customFieldValue = clientCustomFields.find(cf => cf.name === field.name)?.value || field.value || '-';
+                          return (
+                            <div key={idx} className="text-center">{customFieldValue}</div>
+                          );
+                        })}
                       </div>
                     )) : (
                       <div className="p-8 text-center text-gray-500">

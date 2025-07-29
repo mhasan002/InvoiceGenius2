@@ -29,6 +29,7 @@ export const companyProfiles = pgTable("company_profiles", {
   email: varchar("email", { length: 255 }).notNull(),
   address: text("address"),
   logoUrl: text("logo_url"),
+  tagline: text("tagline"),
   customFields: jsonb("custom_fields").default([]),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

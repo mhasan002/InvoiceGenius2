@@ -29,6 +29,7 @@ export default function Company() {
   const [companyEmail, setCompanyEmail] = useState('');
   const [companyAddress, setCompanyAddress] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
+  const [tagline, setTagline] = useState('');
   const [customFields, setCustomFields] = useState<CustomField[]>([{ name: '', value: '' }]);
   const [editingProfile, setEditingProfile] = useState<CompanyProfile | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -41,7 +42,7 @@ export default function Company() {
 
   // Profile mutations
   const createProfileMutation = useMutation({
-    mutationFn: (data: { name: string; email: string; address?: string; logoUrl?: string; customFields: CustomField[] }) =>
+    mutationFn: (data: { name: string; email: string; address?: string; logoUrl?: string; tagline?: string; customFields: CustomField[] }) =>
       apiRequest('/api/company-profiles', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/company-profiles'] });
@@ -55,12 +56,13 @@ export default function Company() {
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: (data: { id: string; name: string; email: string; address?: string; logoUrl?: string; customFields: CustomField[] }) =>
+    mutationFn: (data: { id: string; name: string; email: string; address?: string; logoUrl?: string; tagline?: string; customFields: CustomField[] }) =>
       apiRequest(`/api/company-profiles/${data.id}`, 'PUT', { 
         name: data.name, 
         email: data.email, 
         address: data.address, 
         logoUrl: data.logoUrl, 
+        tagline: data.tagline,
         customFields: data.customFields 
       }),
     onSuccess: () => {
@@ -103,6 +105,7 @@ export default function Company() {
       email: companyEmail.trim(),
       address: companyAddress.trim() || undefined,
       logoUrl: logoUrl.trim() || undefined,
+      tagline: tagline.trim() || undefined,
       customFields: validCustomFields
     };
 
@@ -119,6 +122,7 @@ export default function Company() {
     setCompanyEmail(profile.email);
     setCompanyAddress(profile.address || '');
     setLogoUrl(profile.logoUrl || '');
+    setTagline(profile.tagline || '');
     setCustomFields([...(profile.customFields as CustomField[] || []), { name: '', value: '' }]);
     setDialogOpen(true);
   };
@@ -132,6 +136,7 @@ export default function Company() {
     setCompanyEmail('');
     setCompanyAddress('');
     setLogoUrl('');
+    setTagline('');
     setCustomFields([{ name: '', value: '' }]);
     setEditingProfile(null);
   };
@@ -245,6 +250,16 @@ export default function Company() {
                         placeholder="contact@company.com"
                       />
                     </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="company-tagline">Company Tagline</Label>
+                    <Input
+                      id="company-tagline"
+                      value={tagline}
+                      onChange={(e) => setTagline(e.target.value)}
+                      placeholder="e.g., Innovation at its finest"
+                    />
                   </div>
                   
                   <div>
