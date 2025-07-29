@@ -81,17 +81,41 @@ export default function CreateInvoice() {
 
   const { data: companyProfiles = [] } = useQuery({
     queryKey: ['/api/company-profiles'],
-    queryFn: () => fetch('/api/company-profiles', { credentials: 'include' }).then(res => res.json()),
+    queryFn: async () => {
+      const res = await fetch('/api/company-profiles', { credentials: 'include' });
+      if (!res.ok) {
+        console.error('Failed to fetch company profiles');
+        return [];
+      }
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    },
   });
 
   const { data: paymentMethods = [] } = useQuery({
     queryKey: ['/api/payment-methods'],
-    queryFn: () => fetch('/api/payment-methods', { credentials: 'include' }).then(res => res.json()),
+    queryFn: async () => {
+      const res = await fetch('/api/payment-methods', { credentials: 'include' });
+      if (!res.ok) {
+        console.error('Failed to fetch payment methods');
+        return [];
+      }
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    },
   });
 
   const { data: templates = [] } = useQuery({
     queryKey: ['/api/templates'],
-    queryFn: () => fetch('/api/templates', { credentials: 'include' }).then(res => res.json()),
+    queryFn: async () => {
+      const res = await fetch('/api/templates', { credentials: 'include' });
+      if (!res.ok) {
+        console.error('Failed to fetch templates');
+        return [];
+      }
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    },
   });
 
   // Get selected company profile and payment method details

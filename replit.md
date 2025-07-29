@@ -15,8 +15,11 @@ Navigation Issue Fix: User reported Payment Methods page losing left navigation 
 
 ### Migration to Replit Environment Completed (July 29, 2025)
 - Successfully migrated project from Replit Agent to standard Replit environment
-- Connected to user's Supabase database with provided connection string
+- Connected to user's Supabase database with provided DATABASE_URL connection string
 - Pushed complete database schema to Supabase including all required tables
+- Added missing tagline column to company_profiles table to match schema requirements
+- Fixed React Query error handling in create-invoice page to prevent "find is not a function" errors
+- Updated API fetch functions to handle error responses and ensure array data types
 - Verified all database tables: users, invoices, services, packages, company_profiles, payment_methods, templates
 - Fixed database schema validation issues with numeric fields (decimal to string conversion)
 - Updated schema with missing columns (client_phone, client_address, items, pricing fields)
