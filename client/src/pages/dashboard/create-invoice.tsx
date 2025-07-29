@@ -94,6 +94,11 @@ export default function CreateInvoice() {
     queryFn: () => fetch('/api/templates', { credentials: 'include' }).then(res => res.json()),
   });
 
+  // Get selected company profile and payment method details
+  const selectedCompany = companyProfiles.find((cp: CompanyProfile) => cp.id === selectedCompanyProfile);
+  const selectedPayment = paymentMethods.find((pm: PaymentMethod) => pm.id === selectedPaymentMethod);
+  const defaultTemplate = templates.find((t: Template) => t.isDefault) || templates[0];
+
   // Generate invoice number on load
   useEffect(() => {
     const generateInvoiceNumber = () => {
@@ -253,14 +258,58 @@ export default function CreateInvoice() {
   };
 
   // Handle PDF download
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!clientName || items.length === 0) {
       toast({ title: "Please fill in client name and add at least one item before generating PDF", variant: "destructive" });
       return;
     }
-    
-    // For now, show a message that PDF generation is being implemented
-    toast({ title: "PDF generation feature coming soon!", description: "This feature is currently being developed." });
+
+    try {
+      // First show the preview to ensure it's rendered
+      if (!showPreview) {
+        setShowPreview(true);
+        // Wait a moment for the preview to render
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      const { default: html2canvas } = await import('html2canvas');
+      const { default: jsPDF } = await import('jspdf');
+
+      // Find the preview element
+      const previewElement = document.querySelector('[data-invoice-preview]');
+      if (!previewElement) {
+        toast({ title: "Error generating PDF", description: "Preview not found. Please try again.", variant: "destructive" });
+        return;
+      }
+
+      toast({ title: "Generating PDF...", description: "Please wait while we create your invoice PDF." });
+
+      // Generate canvas from the preview
+      const canvas = await html2canvas(previewElement as HTMLElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      });
+
+      // Create PDF
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/png');
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      
+      // Save the PDF
+      const fileName = `invoice-${invoiceNumber || 'draft'}-${clientName.replace(/\s+/g, '-')}.pdf`;
+      pdf.save(fileName);
+      
+      toast({ title: "PDF downloaded successfully!", description: `Invoice saved as ${fileName}` });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast({ title: "Error generating PDF", description: "Failed to create PDF. Please try again.", variant: "destructive" });
+    }
   };
 
   return (
@@ -289,11 +338,11 @@ export default function CreateInvoice() {
         </div>
 
         {/* Invoice Preview */}
-        {showPreview && (
+        {showPreview && defaultTemplate && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>Invoice Preview</span>
+                <span>Invoice Preview - {defaultTemplate.name}</span>
                 <Button variant="outline" size="sm" onClick={() => setShowPreview(false)}>
                   <X className="h-4 w-4 mr-2" />
                   Close Preview
@@ -301,114 +350,206 @@ export default function CreateInvoice() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-white p-8 border rounded-lg max-w-4xl mx-auto">
-                {/* Invoice Header */}
+              <div data-invoice-preview className="bg-white p-8 shadow-lg rounded-lg max-w-4xl mx-auto" 
+                   style={{ 
+                     color: defaultTemplate.config?.textColor || '#000', 
+                     fontFamily: defaultTemplate.config?.fontFamily || 'inherit' 
+                   }}>
+                
+                {/* Professional Template Header */}
                 <div className="flex justify-between items-start mb-8">
-                  <div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">INVOICE</h1>
-                    <p className="text-gray-600">Invoice #{invoiceNumber || 'Not specified'}</p>
+                  <div className="flex items-center gap-4">
+                    {defaultTemplate.config?.logoVisible && (
+                      <div className="w-12 h-12 rounded" 
+                           style={{ backgroundColor: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
+                        <svg viewBox="0 0 32 32" className="w-full h-full p-2 text-white">
+                          <path fill="currentColor" d="M16 8l8 8-8 8-8-8z"/>
+                        </svg>
+                      </div>
+                    )}
+                    <div>
+                      <h1 className="text-4xl font-light tracking-wider mb-2" 
+                          style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
+                        INVOICE
+                      </h1>
+                      <p className="text-sm">
+                        INVOICE NUMBER • {invoiceNumber || 'Not specified'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right text-sm text-gray-600">
-                    <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
-                    {platform && <p><strong>Platform:</strong> {platform}</p>}
+                  <div className="text-right text-sm">
+                    <p><strong>DATE:</strong> {new Date().toLocaleDateString()}</p>
+                    <p><strong>DUE DATE:</strong> {new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}</p>
+                    {platform && <p><strong>PLATFORM:</strong> {platform}</p>}
                   </div>
                 </div>
 
-                {/* Bill To Section */}
+                {/* Company and Client Information */}
                 <div className="grid grid-cols-2 gap-8 mb-8">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Bill To:</h3>
-                    <div className="text-gray-700">
-                      <p className="font-medium">{clientName || 'Client Name'}</p>
+                    <h3 className="text-lg font-semibold mb-3" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
+                      FROM:
+                    </h3>
+                    <div className="space-y-1">
+                      {selectedCompany ? (
+                        <>
+                          <p className="font-semibold text-lg">{selectedCompany.companyName}</p>
+                          <p>{selectedCompany.email}</p>
+                          <p>{selectedCompany.phone}</p>
+                          <p className="whitespace-pre-line">{selectedCompany.address}</p>
+                          {selectedCompany.website && <p>Website: {selectedCompany.website}</p>}
+                        </>
+                      ) : (
+                        <p className="text-gray-500">No company profile selected</p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
+                      BILL TO:
+                    </h3>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-lg">{clientName || 'Client Name'}</p>
                       {clientEmail && <p>{clientEmail}</p>}
                       {clientPhone && <p>{clientPhone}</p>}
                       {clientAddress && <p className="whitespace-pre-line">{clientAddress}</p>}
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment To:</h3>
-                    <div className="text-gray-700">
-                      <p className="font-medium">{paymentReceivedBy || 'Your Name'}</p>
+                      {clientCustomFields.map((field, idx) => field.value && (
+                        <p key={idx}><strong>{field.name}:</strong> {field.value}</p>
+                      ))}
                     </div>
                   </div>
                 </div>
 
+                {/* Payment Method Information */}
+                {selectedPayment && (
+                  <div className="mb-8 p-4 bg-gray-50 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-2" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
+                      PAYMENT DETAILS:
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p><strong>Method:</strong> {selectedPayment.type}</p>
+                        <p><strong>Account:</strong> {selectedPayment.accountDetails}</p>
+                      </div>
+                      <div>
+                        {paymentReceivedBy && <p><strong>Payment To:</strong> {paymentReceivedBy}</p>}
+                        {selectedPayment.additionalInfo && <p><strong>Info:</strong> {selectedPayment.additionalInfo}</p>}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Items Table */}
                 <div className="mb-8">
-                  <table className="w-full border-collapse border border-gray-300">
+                  <table className="w-full border-collapse">
                     <thead>
-                      <tr className="bg-gray-50">
-                        <th className="border border-gray-300 px-4 py-2 text-left">Item</th>
-                        <th className="border border-gray-300 px-4 py-2 text-center">Qty</th>
-                        <th className="border border-gray-300 px-4 py-2 text-right">Unit Price</th>
-                        <th className="border border-gray-300 px-4 py-2 text-right">Total</th>
+                      <tr style={{ backgroundColor: defaultTemplate.config?.secondaryColor || '#F3F4F6' }}>
+                        <th className="border px-4 py-3 text-left font-semibold">DESCRIPTION</th>
+                        <th className="border px-4 py-3 text-center font-semibold">QTY</th>
+                        <th className="border px-4 py-3 text-right font-semibold">RATE</th>
+                        <th className="border px-4 py-3 text-right font-semibold">AMOUNT</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {items.map((item) => (
+                      {items.length > 0 ? items.map((item) => (
                         <tr key={item.id}>
-                          <td className="border border-gray-300 px-4 py-2">
+                          <td className="border px-4 py-3">
                             <div>
                               <p className="font-medium">{item.name}</p>
                               {item.type === 'package' && item.packageServices && (
                                 <div className="text-sm text-gray-600 mt-1">
-                                  <p>Package includes:</p>
-                                  <ul className="list-disc list-inside">
+                                  <p className="font-medium">Package includes:</p>
+                                  <ul className="list-disc list-inside ml-2">
                                     {item.packageServices.map((service, idx) => (
                                       <li key={idx}>{service.name} {service.quantity && `(${service.quantity})`}</li>
                                     ))}
                                   </ul>
                                 </div>
                               )}
+                              {item.timePeriod && item.timePeriod > 1 && (
+                                <p className="text-sm text-gray-600">Duration: {item.timePeriod} month{item.timePeriod > 1 ? 's' : ''}</p>
+                              )}
                             </div>
                           </td>
-                          <td className="border border-gray-300 px-4 py-2 text-center">{item.quantity}</td>
-                          <td className="border border-gray-300 px-4 py-2 text-right">${item.unitPrice.toFixed(2)}</td>
-                          <td className="border border-gray-300 px-4 py-2 text-right">${item.total.toFixed(2)}</td>
+                          <td className="border px-4 py-3 text-center">{item.quantity}</td>
+                          <td className="border px-4 py-3 text-right">${item.unitPrice.toFixed(2)}</td>
+                          <td className="border px-4 py-3 text-right font-medium">${item.total.toFixed(2)}</td>
                         </tr>
-                      ))}
+                      )) : (
+                        <tr>
+                          <td colSpan={4} className="border px-4 py-8 text-center text-gray-500">
+                            No items added to invoice
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
 
-                {/* Totals */}
+                {/* Totals Section */}
                 <div className="flex justify-end mb-8">
-                  <div className="w-64 space-y-2">
-                    <div className="flex justify-between">
-                      <span>Subtotal:</span>
-                      <span>${subtotal.toFixed(2)}</span>
+                  <div className="w-80 space-y-3">
+                    <div className="flex justify-between py-2">
+                      <span className="font-medium">Subtotal:</span>
+                      <span className="font-medium">${subtotal.toFixed(2)}</span>
                     </div>
                     {taxPercentage > 0 && (
-                      <div className="flex justify-between">
+                      <div className="flex justify-between py-2">
                         <span>Tax ({taxPercentage}%):</span>
                         <span>${taxAmount.toFixed(2)}</span>
                       </div>
                     )}
                     {discountValue > 0 && (
-                      <div className="flex justify-between text-red-600">
-                        <span>Discount:</span>
+                      <div className="flex justify-between py-2 text-red-600">
+                        <span>
+                          Discount ({discountType === 'percentage' ? `${discountValue}%` : `$${discountValue}`}):
+                        </span>
                         <span>-${discountAmount.toFixed(2)}</span>
                       </div>
                     )}
-                    <Separator />
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>Total:</span>
-                      <span>${total.toFixed(2)}</span>
+                    <div className="border-t pt-3">
+                      <div className="flex justify-between py-2">
+                        <span className="text-xl font-bold" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
+                          TOTAL:
+                        </span>
+                        <span className="text-xl font-bold" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
+                          ${total.toFixed(2)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Notes and Terms */}
                 {(showNotes && notes) && (
-                  <div className="mb-4">
-                    <h4 className="font-semibold text-gray-900 mb-2">Notes:</h4>
-                    <p className="text-gray-700 whitespace-pre-line">{notes}</p>
+                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-semibold mb-2" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
+                      NOTES:
+                    </h4>
+                    <p className="whitespace-pre-line text-sm">{notes}</p>
                   </div>
                 )}
+                
                 {(showTerms && terms) && (
-                  <div className="mb-4">
-                    <h4 className="font-semibold text-gray-900 mb-2">Terms & Conditions:</h4>
-                    <p className="text-gray-700 whitespace-pre-line">{terms}</p>
+                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-semibold mb-2" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
+                      TERMS & CONDITIONS:
+                    </h4>
+                    <p className="whitespace-pre-line text-sm">{terms}</p>
+                  </div>
+                )}
+
+                {/* Custom Fields from Template */}
+                {defaultTemplate.config?.customFields && defaultTemplate.config.customFields.length > 0 && (
+                  <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-semibold mb-2" style={{ color: defaultTemplate.config?.primaryColor || '#3B82F6' }}>
+                      ADDITIONAL INFORMATION:
+                    </h4>
+                    <div className="space-y-1 text-sm">
+                      {defaultTemplate.config.customFields.map((field, idx) => field.value && (
+                        <p key={idx}><strong>{field.name}:</strong> {field.value}</p>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
