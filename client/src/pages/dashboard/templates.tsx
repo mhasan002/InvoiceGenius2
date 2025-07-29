@@ -152,14 +152,24 @@ export default function Templates() {
   });
 
   const handleSelectTemplate = (template: TemplateConfig) => {
-    const clonedTemplate = { ...template, id: `${template.id}_${Date.now()}` };
+    // Ensure all boolean properties are properly maintained when cloning
+    const clonedTemplate = { 
+      ...template, 
+      id: `${template.id}_${Date.now()}`,
+      showTerms: template.showTerms ?? true, // Ensure showTerms is preserved
+      showNotes: template.showNotes ?? true, // Ensure showNotes is preserved
+      logoVisible: template.logoVisible ?? true // Ensure logoVisible is preserved
+    };
     setSelectedTemplate(clonedTemplate);
     setEditingTemplate(clonedTemplate);
   };
 
   const updateTemplate = (updates: Partial<TemplateConfig>) => {
     if (editingTemplate) {
-      setEditingTemplate({ ...editingTemplate, ...updates });
+      console.log('updateTemplate called with:', updates);
+      const updatedTemplate = { ...editingTemplate, ...updates };
+      console.log('Updated template:', updatedTemplate);
+      setEditingTemplate(updatedTemplate);
     }
   };
 
@@ -868,7 +878,7 @@ export default function Templates() {
                         <div className="flex items-center justify-between">
                           <Label>Show Company Logo</Label>
                           <Switch
-                            checked={editingTemplate?.logoVisible}
+                            checked={Boolean(editingTemplate?.logoVisible)}
                             onCheckedChange={(checked) => updateTemplate({ logoVisible: checked })}
                           />
                         </div>
@@ -876,7 +886,7 @@ export default function Templates() {
                         <div className="flex items-center justify-between">
                           <Label>Show Notes Section</Label>
                           <Switch
-                            checked={editingTemplate?.showNotes}
+                            checked={Boolean(editingTemplate?.showNotes)}
                             onCheckedChange={(checked) => updateTemplate({ showNotes: checked })}
                           />
                         </div>
@@ -884,15 +894,18 @@ export default function Templates() {
                         <div className="flex items-center justify-between">
                           <Label>Show Terms & Conditions</Label>
                           <Switch
-                            checked={editingTemplate?.showTerms}
-                            onCheckedChange={(checked) => updateTemplate({ showTerms: checked })}
+                            checked={Boolean(editingTemplate?.showTerms)}
+                            onCheckedChange={(checked) => {
+                              console.log('showTerms toggle:', checked);
+                              updateTemplate({ showTerms: checked });
+                            }}
                           />
                         </div>
                         
                         <div className="flex items-center justify-between">
                           <Label>Show Payment Information</Label>
                           <Switch
-                            checked={editingTemplate?.showPayment}
+                            checked={Boolean(editingTemplate?.showPayment)}
                             onCheckedChange={(checked) => updateTemplate({ showPayment: checked })}
                           />
                         </div>
