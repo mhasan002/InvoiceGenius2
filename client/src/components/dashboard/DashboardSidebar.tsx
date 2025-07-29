@@ -53,7 +53,7 @@ const sidebarItems: SidebarItem[] = [
   },
   {
     title: 'Create Invoice',
-    href: '/dashboard/create',
+    href: '/dashboard/create-invoice',
     icon: Plus,
   },
   {

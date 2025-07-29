@@ -352,7 +352,7 @@ export function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/invoices", requireAuth, async (req: any, res) => {
     try {
-      const validatedData = insertInvoiceSchema.omit({ userId: true }).parse(req.body);
+      const validatedData = insertInvoiceSchema.parse(req.body);
       const invoice = await storage.createInvoice({
         ...validatedData,
         userId: req.session.userId,

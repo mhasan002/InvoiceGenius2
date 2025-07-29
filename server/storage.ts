@@ -34,7 +34,7 @@ export interface IStorage {
   // Invoice operations
   getInvoices(userId?: string): Promise<Invoice[]>;
   getInvoice(id: string): Promise<Invoice | undefined>;
-  createInvoice(invoice: InsertInvoice): Promise<Invoice>;
+  createInvoice(invoice: InsertInvoice & { userId: string }): Promise<Invoice>;
   updateInvoice(id: string, invoice: Partial<InsertInvoice>): Promise<Invoice | undefined>;
   deleteInvoice(id: string): Promise<boolean>;
   
@@ -123,7 +123,7 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async createInvoice(invoice: InsertInvoice): Promise<Invoice> {
+  async createInvoice(invoice: InsertInvoice & { userId: string }): Promise<Invoice> {
     const result = await this.db.insert(invoices).values(invoice).returning();
     return result[0];
   }
@@ -338,13 +338,32 @@ export class MemStorage implements IStorage {
     return this.invoices.get(id);
   }
 
-  async createInvoice(invoice: InsertInvoice): Promise<Invoice> {
+  async createInvoice(invoice: InsertInvoice & { userId: string }): Promise<Invoice> {
     const id = randomUUID();
     const newInvoice: Invoice = {
-      ...invoice,
       id,
-      userId: invoice.userId || null,
+      userId: invoice.userId,
+      invoiceNumber: invoice.invoiceNumber,
+      clientName: invoice.clientName,
+      clientPhone: invoice.clientPhone || null,
+      clientAddress: invoice.clientAddress || null,
       clientEmail: invoice.clientEmail || null,
+      clientCustomFields: invoice.clientCustomFields || [],
+      items: invoice.items,
+      taxPercentage: invoice.taxPercentage || "0",
+      discountType: invoice.discountType || "flat",
+      discountValue: invoice.discountValue || "0",
+      platform: invoice.platform || null,
+      companyProfileId: invoice.companyProfileId || null,
+      paymentMethodId: invoice.paymentMethodId || null,
+      paymentReceivedBy: invoice.paymentReceivedBy || null,
+      templateId: invoice.templateId || null,
+      notes: invoice.notes || null,
+      terms: invoice.terms || null,
+      subtotal: invoice.subtotal,
+      taxAmount: invoice.taxAmount || "0",
+      discountAmount: invoice.discountAmount || "0",
+      total: invoice.total,
       status: invoice.status || "draft",
       createdAt: new Date(),
       updatedAt: new Date(),

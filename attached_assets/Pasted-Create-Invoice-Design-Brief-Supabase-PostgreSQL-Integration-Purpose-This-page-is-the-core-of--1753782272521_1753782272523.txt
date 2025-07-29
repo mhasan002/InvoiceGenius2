@@ -1,0 +1,169 @@
+Create Invoice
+Design Brief + Supabase PostgreSQL Integration
+
+🧾 Purpose:
+This page is the core of the entire invoice system. It must allow users to create invoices by selecting and combining data from all other pages—Company Profiles, Services, Packages, Templates, and Payment Methods—and generate a live preview and downloadable PDF using their selected template.
+
+All data must be stored and retrieved from PostgreSQL via Supabase.
+
+🖼️ Page Layout:
+🔹 Header:
+Page Title: Create Invoice
+
+Buttons:
+
+🔄 Reset Form
+
+👁️ Preview Invoice
+
+📥 Download PDF
+
+🔹 Section 1: Client Details (Bill To)
+Editable input fields:
+
+Client Name
+
+Phone Number
+
+Address
+
+➕ Add Custom Field (e.g. TIN No, Company Reg No.)
+
+These details should show up in the Bill To section of the invoice
+
+All input values should be stored with the invoice in Supabase
+
+🔹 Section 2: Add Services & Packages
+Two clickable tabs:
+
+🔧 Services
+
+🎁 Packages
+
+➤ When Services is selected:
+Dropdown list of all services (from Services page)
+
+For each added service:
+
+Select service
+
+Input quantity
+
+Optional: Time period
+
+System multiplies:
+Total = Unit Price × Quantity × Time Period
+
+➤ When Packages is selected:
+Dropdown list of all packages (from Packages page)
+
+For each added package:
+
+Select package
+
+Input quantity
+
+Optional: Time period
+
+System multiplies:
+Total = Package Price × Quantity × Time Period
+
+Show the list of services included in the package, but do not calculate their unit prices separately
+
+✅ If both services and packages are selected, the system must not conflict the prices. It must use the unit price for individual services, and the flat package price for packages.
+
+Example:
+
+Service: FB Ads → $500 (Qty 2)
+
+Package: FB Ads + Graphics (Qty 1) → $300
+
+Display:
+
+yaml
+Copy
+Edit
+Item Description:
+FB Ads – Qty: 2
+FB Ads (from package) – Qty: 1
+Graphics (from package) – Qty: 2
+Total: $1300
+🔹 Section 3: Price Modifiers
+Input:
+
+📦 Tax %
+
+💸 Discount (Flat or %)
+
+🖋️ Platform (Optional writeable field, like "Upwork", shown at top of invoice)
+
+🔹 Section 4: Payable To (Receiver Info)
+Must-fill input: "Payment Received By" (Text input)
+
+System auto-fills rest of this section using the selected Company Profile:
+
+Company Name, Address, Email
+
+Logo (resized)
+
+Custom fields (ex: Tax ID)
+
+This will be shown as “Payable To” in the invoice.
+
+🔹 Section 5: Payment Method
+Dropdown of all saved payment methods (Bank, Card, Crypto, or custom)
+
+Selected value will be shown in the invoice footer or designated template field
+
+🔹 Section 6: Template Application + Live Preview
+Fetches the default selected template from Templates page
+
+Invoice must apply:
+
+Field toggles (hide/show price, notes, terms, etc.)
+
+Field name changes
+
+Colors, styling, header/footer
+
+Any removed fields (like “Price”) should not appear in preview/PDF
+
+Also includes:
+
+Add Note
+
+Add Terms & Conditions
+
+Toggle ON/OFF buttons for each of them
+
+Live preview of invoice should match PDF exactly
+
+🔹 Section 7: Final Actions
+Show calculated Total Price
+
+Button to Preview Invoice
+
+Button to Download as PDF
+
+PDF must follow the selected template style, layout, and field toggles exactly.
+
+🔗 Database (PostgreSQL via Supabase)
+All information on this page must be stored to Supabase, including:
+
+Client details and custom fields
+
+Selected services, packages, quantities, time period
+
+Company profile selection
+
+Payment method
+
+Applied template
+
+Notes, terms, toggles, colors
+
+Platform, tax, discount
+
+Final calculated totals
+
+PDF download metadata (e.g. timestamp, filename, etc.)

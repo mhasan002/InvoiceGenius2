@@ -1,0 +1,705 @@
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { RefreshCw, Eye, Download, Plus, X, Trash2, FileText } from "lucide-react";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { type Service, type Package, type CompanyProfile, type PaymentMethod, type Template } from "@shared/schema";
+
+interface InvoiceItem {
+  id: string;
+  type: 'service' | 'package';
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  timePeriod?: number;
+  total: number;
+  packageServices?: Array<{ name: string; quantity?: number }>;
+}
+
+interface ClientCustomField {
+  name: string;
+  value: string;
+}
+
+export default function CreateInvoice() {
+  // Form state
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [clientAddress, setClientAddress] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
+  const [clientCustomFields, setClientCustomFields] = useState<ClientCustomField[]>([]);
+  
+  // Items state
+  const [items, setItems] = useState<InvoiceItem[]>([]);
+  const [activeTab, setActiveTab] = useState('services');
+  
+  // Price modifiers
+  const [taxPercentage, setTaxPercentage] = useState(0);
+  const [discountType, setDiscountType] = useState<'flat' | 'percentage'>('flat');
+  const [discountValue, setDiscountValue] = useState(0);
+  const [platform, setPlatform] = useState('');
+  
+  // Company and payment
+  const [selectedCompanyProfile, setSelectedCompanyProfile] = useState('');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
+  const [paymentReceivedBy, setPaymentReceivedBy] = useState('');
+  
+  // Template and customization
+  const [notes, setNotes] = useState('');
+  const [terms, setTerms] = useState('');
+  const [showNotes, setShowNotes] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  
+  // Preview state
+  const [showPreview, setShowPreview] = useState(false);
+  
+  const { toast } = useToast();
+
+  // Fetch data from all modules
+  const { data: services = [] } = useQuery({
+    queryKey: ['/api/services'],
+    queryFn: () => fetch('/api/services', { credentials: 'include' }).then(res => res.json()),
+  });
+
+  const { data: packages = [] } = useQuery({
+    queryKey: ['/api/packages'],
+    queryFn: () => fetch('/api/packages', { credentials: 'include' }).then(res => res.json()),
+  });
+
+  const { data: companyProfiles = [] } = useQuery({
+    queryKey: ['/api/company-profiles'],
+    queryFn: () => fetch('/api/company-profiles', { credentials: 'include' }).then(res => res.json()),
+  });
+
+  const { data: paymentMethods = [] } = useQuery({
+    queryKey: ['/api/payment-methods'],
+    queryFn: () => fetch('/api/payment-methods', { credentials: 'include' }).then(res => res.json()),
+  });
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ['/api/templates'],
+    queryFn: () => fetch('/api/templates', { credentials: 'include' }).then(res => res.json()),
+  });
+
+  // Generate invoice number on load
+  useEffect(() => {
+    const generateInvoiceNumber = () => {
+      const date = new Date();
+      const timestamp = date.getTime().toString().slice(-6);
+      return `INV-${timestamp}`;
+    };
+    setInvoiceNumber(generateInvoiceNumber());
+  }, []);
+
+  // Calculate totals
+  const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+  const taxAmount = (subtotal * taxPercentage) / 100;
+  const discountAmount = discountType === 'percentage' 
+    ? (subtotal * discountValue) / 100 
+    : discountValue;
+  const total = subtotal + taxAmount - discountAmount;
+
+  // Add service to invoice
+  const addService = (serviceId: string) => {
+    const service = services.find((s: Service) => s.id === serviceId);
+    if (!service) return;
+
+    const newItem: InvoiceItem = {
+      id: `service_${Date.now()}`,
+      type: 'service',
+      name: service.name,
+      unitPrice: parseFloat(service.unitPrice),
+      quantity: 1,
+      timePeriod: 1,
+      total: parseFloat(service.unitPrice),
+    };
+    setItems([...items, newItem]);
+  };
+
+  // Add package to invoice
+  const addPackage = (packageId: string) => {
+    const pkg = packages.find((p: Package) => p.id === packageId);
+    if (!pkg) return;
+
+    const packageServices = Array.isArray(pkg.services) ? pkg.services : [];
+    
+    const newItem: InvoiceItem = {
+      id: `package_${Date.now()}`,
+      type: 'package',
+      name: pkg.name,
+      unitPrice: parseFloat(pkg.price),
+      quantity: 1,
+      timePeriod: 1,
+      total: parseFloat(pkg.price),
+      packageServices,
+    };
+    setItems([...items, newItem]);
+  };
+
+  // Update item quantity or time period
+  const updateItem = (itemId: string, field: 'quantity' | 'timePeriod', value: number) => {
+    setItems(items.map(item => {
+      if (item.id === itemId) {
+        const updated = { ...item, [field]: value };
+        updated.total = updated.unitPrice * updated.quantity * (updated.timePeriod || 1);
+        return updated;
+      }
+      return item;
+    }));
+  };
+
+  // Remove item
+  const removeItem = (itemId: string) => {
+    setItems(items.filter(item => item.id !== itemId));
+  };
+
+  // Add custom field for client
+  const addClientCustomField = () => {
+    setClientCustomFields([...clientCustomFields, { name: '', value: '' }]);
+  };
+
+  // Update custom field
+  const updateClientCustomField = (index: number, field: 'name' | 'value', value: string) => {
+    const updated = [...clientCustomFields];
+    updated[index][field] = value;
+    setClientCustomFields(updated);
+  };
+
+  // Remove custom field
+  const removeClientCustomField = (index: number) => {
+    setClientCustomFields(clientCustomFields.filter((_, i) => i !== index));
+  };
+
+  // Reset form
+  const resetForm = () => {
+    setClientName('');
+    setClientPhone('');
+    setClientAddress('');
+    setClientEmail('');
+    setClientCustomFields([]);
+    setItems([]);
+    setTaxPercentage(0);
+    setDiscountValue(0);
+    setPlatform('');
+    setNotes('');
+    setTerms('');
+    setPaymentReceivedBy('');
+    const generateInvoiceNumber = () => {
+      const date = new Date();
+      const timestamp = date.getTime().toString().slice(-6);
+      return `INV-${timestamp}`;
+    };
+    setInvoiceNumber(generateInvoiceNumber());
+  };
+
+  // Save invoice mutation
+  const createInvoiceMutation = useMutation({
+    mutationFn: (invoiceData: any) => apiRequest('POST', '/api/invoices', invoiceData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
+      toast({ title: "Invoice created successfully!" });
+      resetForm();
+    },
+    onError: () => {
+      toast({ title: "Failed to create invoice", variant: "destructive" });
+    }
+  });
+
+  // Handle save invoice
+  const handleSaveInvoice = () => {
+    if (!clientName || items.length === 0) {
+      toast({ title: "Please fill in client name and add at least one item", variant: "destructive" });
+      return;
+    }
+
+    const invoiceData = {
+      invoiceNumber,
+      clientName,
+      clientPhone,
+      clientAddress,
+      clientEmail,
+      clientCustomFields,
+      items,
+      taxPercentage,
+      discountType,
+      discountValue,
+      platform,
+      companyProfileId: selectedCompanyProfile || null,
+      paymentMethodId: selectedPaymentMethod || null,
+      paymentReceivedBy,
+      notes: showNotes ? notes : null,
+      terms: showTerms ? terms : null,
+      subtotal,
+      taxAmount,
+      discountAmount,
+      total,
+      status: 'draft'
+    };
+
+    createInvoiceMutation.mutate(invoiceData);
+  };
+
+  return (
+    <DashboardLayout title="Create Invoice">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create Invoice</h1>
+            <p className="text-gray-600 dark:text-gray-400">Create a new invoice by combining all your data</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={resetForm}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Reset Form
+            </Button>
+            <Button variant="outline" onClick={() => setShowPreview(!showPreview)}>
+              <Eye className="h-4 w-4 mr-2" />
+              Preview Invoice
+            </Button>
+            <Button>
+              <Download className="h-4 w-4 mr-2" />
+              Download PDF
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Form Section */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Invoice Number */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Invoice Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="invoiceNumber">Invoice Number</Label>
+                    <Input
+                      id="invoiceNumber"
+                      value={invoiceNumber}
+                      onChange={(e) => setInvoiceNumber(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="platform">Platform (Optional)</Label>
+                    <Input
+                      id="platform"
+                      placeholder="e.g., Upwork, Fiverr"
+                      value={platform}
+                      onChange={(e) => setPlatform(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Client Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Client Details (Bill To)</CardTitle>
+                <CardDescription>Information about who you're billing</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="clientName">Client Name *</Label>
+                    <Input
+                      id="clientName"
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="clientPhone">Phone Number</Label>
+                    <Input
+                      id="clientPhone"
+                      value={clientPhone}
+                      onChange={(e) => setClientPhone(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="clientEmail">Email Address</Label>
+                    <Input
+                      id="clientEmail"
+                      type="email"
+                      value={clientEmail}
+                      onChange={(e) => setClientEmail(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="clientAddress">Address</Label>
+                    <Textarea
+                      id="clientAddress"
+                      rows={2}
+                      value={clientAddress}
+                      onChange={(e) => setClientAddress(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Custom Fields */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Custom Fields</Label>
+                    <Button size="sm" variant="outline" onClick={addClientCustomField}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Custom Field
+                    </Button>
+                  </div>
+                  {clientCustomFields.map((field, index) => (
+                    <div key={index} className="flex gap-2 mb-2">
+                      <Input
+                        placeholder="Field name (e.g., TIN No)"
+                        value={field.name}
+                        onChange={(e) => updateClientCustomField(index, 'name', e.target.value)}
+                      />
+                      <Input
+                        placeholder="Field value"
+                        value={field.value}
+                        onChange={(e) => updateClientCustomField(index, 'value', e.target.value)}
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => removeClientCustomField(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Add Services & Packages */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Add Services & Packages</CardTitle>
+                <CardDescription>Select services and packages to include in this invoice</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="services">Services</TabsTrigger>
+                    <TabsTrigger value="packages">Packages</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="services" className="space-y-4">
+                    <Select onValueChange={addService}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a service to add" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {services.map((service: Service) => (
+                          <SelectItem key={service.id} value={service.id}>
+                            {service.name} - ${service.unitPrice}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TabsContent>
+                  
+                  <TabsContent value="packages" className="space-y-4">
+                    <Select onValueChange={addPackage}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a package to add" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {packages.map((pkg: Package) => (
+                          <SelectItem key={pkg.id} value={pkg.id}>
+                            {pkg.name} - ${pkg.price}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TabsContent>
+                </Tabs>
+
+                {/* Items List */}
+                {items.length > 0 && (
+                  <div className="mt-6 space-y-3">
+                    <Label>Selected Items</Label>
+                    {items.map((item) => (
+                      <div key={item.id} className="border rounded-lg p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant={item.type === 'service' ? 'default' : 'secondary'}>
+                                {item.type}
+                              </Badge>
+                              <h4 className="font-medium">{item.name}</h4>
+                            </div>
+                            
+                            {item.packageServices && (
+                              <div className="text-sm text-gray-600 mb-2">
+                                <span className="font-medium">Includes:</span>
+                                {item.packageServices.map((service, idx) => (
+                                  <span key={idx} className="ml-2">
+                                    {service.name}
+                                    {service.quantity && ` (${service.quantity})`}
+                                    {idx < item.packageServices!.length - 1 && ','}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            
+                            <div className="grid grid-cols-4 gap-2">
+                              <div>
+                                <Label className="text-xs">Unit Price</Label>
+                                <p className="text-sm font-medium">${item.unitPrice}</p>
+                              </div>
+                              <div>
+                                <Label className="text-xs">Quantity</Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={item.quantity}
+                                  onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 1)}
+                                  className="h-8"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Time Period</Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={item.timePeriod || 1}
+                                  onChange={(e) => updateItem(item.id, 'timePeriod', parseInt(e.target.value) || 1)}
+                                  className="h-8"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Total</Label>
+                                <p className="text-sm font-bold">${item.total.toFixed(2)}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => removeItem(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Price Modifiers */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Price Modifiers</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="tax">Tax (%)</Label>
+                    <Input
+                      id="tax"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={taxPercentage}
+                      onChange={(e) => setTaxPercentage(parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="discountType">Discount Type</Label>
+                    <Select value={discountType} onValueChange={(value: 'flat' | 'percentage') => setDiscountType(value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="flat">Flat Amount ($)</SelectItem>
+                        <SelectItem value="percentage">Percentage (%)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="discount">
+                      Discount {discountType === 'percentage' ? '(%)' : '($)'}
+                    </Label>
+                    <Input
+                      id="discount"
+                      type="number"
+                      min="0"
+                      value={discountValue}
+                      onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Company Profile & Payment Method */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Company & Payment Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="paymentReceivedBy">Payment Received By *</Label>
+                  <Input
+                    id="paymentReceivedBy"
+                    placeholder="Your name or company name"
+                    value={paymentReceivedBy}
+                    onChange={(e) => setPaymentReceivedBy(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Company Profile</Label>
+                    <Select value={selectedCompanyProfile} onValueChange={setSelectedCompanyProfile}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select company profile" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {companyProfiles.map((profile: CompanyProfile) => (
+                          <SelectItem key={profile.id} value={profile.id}>
+                            {profile.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Payment Method</Label>
+                    <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {paymentMethods.map((method: PaymentMethod) => (
+                          <SelectItem key={method.id} value={method.id}>
+                            {method.name} ({method.type})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Notes and Terms */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Additional Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="showNotes"
+                    checked={showNotes}
+                    onCheckedChange={setShowNotes}
+                  />
+                  <Label htmlFor="showNotes">Add Notes</Label>
+                </div>
+                {showNotes && (
+                  <Textarea
+                    placeholder="Add any notes for the client..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={3}
+                  />
+                )}
+                
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="showTerms"
+                    checked={showTerms}
+                    onCheckedChange={setShowTerms}
+                  />
+                  <Label htmlFor="showTerms">Add Terms & Conditions</Label>
+                </div>
+                {showTerms && (
+                  <Textarea
+                    placeholder="Add terms and conditions..."
+                    value={terms}
+                    onChange={(e) => setTerms(e.target.value)}
+                    rows={4}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Summary Sidebar */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Invoice Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span>${subtotal.toFixed(2)}</span>
+                </div>
+                {taxPercentage > 0 && (
+                  <div className="flex justify-between">
+                    <span>Tax ({taxPercentage}%):</span>
+                    <span>${taxAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                {discountValue > 0 && (
+                  <div className="flex justify-between text-red-600">
+                    <span>
+                      Discount ({discountType === 'percentage' ? `${discountValue}%` : `$${discountValue}`}):
+                    </span>
+                    <span>-${discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                <Separator />
+                <div className="flex justify-between font-bold text-lg">
+                  <span>Total:</span>
+                  <span>${total.toFixed(2)}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Actions */}
+            <div className="space-y-3">
+              <Button 
+                className="w-full" 
+                onClick={handleSaveInvoice}
+                disabled={createInvoiceMutation.isPending}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                {createInvoiceMutation.isPending ? 'Creating...' : 'Create Invoice'}
+              </Button>
+              <Button variant="outline" className="w-full">
+                <Eye className="h-4 w-4 mr-2" />
+                Preview Invoice
+              </Button>
+              <Button variant="outline" className="w-full">
+                <Download className="h-4 w-4 mr-2" />
+                Download PDF
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}
