@@ -563,16 +563,31 @@ export function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/company-profiles/:id", requireAuth, async (req: any, res) => {
     try {
+      console.log("Update request body:", req.body);
+      console.log("Profile ID:", req.params.id);
+      console.log("User ID:", req.session.userId);
+      
       const profile = await storage.getCompanyProfile(req.params.id);
+      console.log("Found profile:", profile);
+      
       if (!profile || profile.userId !== req.session.userId) {
+        console.log("Profile not found or unauthorized");
         return res.status(404).json({ error: "Company profile not found" });
       }
 
       const validatedData = insertCompanyProfileSchema.partial().parse(req.body);
+      console.log("Validated data:", validatedData);
+      
       const updatedProfile = await storage.updateCompanyProfile(req.params.id, validatedData);
+      console.log("Updated profile:", updatedProfile);
+      
       res.json(updatedProfile);
     } catch (error) {
       console.error("Error updating company profile:", error);
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
       res.status(500).json({ error: "Failed to update company profile" });
     }
   });
