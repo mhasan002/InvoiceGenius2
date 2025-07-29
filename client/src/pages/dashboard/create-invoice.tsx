@@ -389,10 +389,10 @@ export default function CreateInvoice() {
                       <div className="mb-8">
                         <div className="flex items-center mb-2">
                           {defaultTemplate.config?.logoVisible && selectedCompany?.logoUrl ? (
-                            <img src={selectedCompany.logoUrl} alt="Company Logo" className="w-8 h-8 mr-3 object-contain" />
+                            <img src={selectedCompany.logoUrl} alt="Company Logo" className="w-12 h-12 mr-3 object-contain rounded" />
                           ) : defaultTemplate.config?.logoVisible && (
-                            <div className="w-8 h-8 mr-3" style={{ backgroundColor: defaultTemplate.config?.primaryColor }}>
-                              <svg viewBox="0 0 32 32" className="w-full h-full p-1 text-white">
+                            <div className="w-12 h-12 mr-3" style={{ backgroundColor: defaultTemplate.config?.primaryColor }}>
+                              <svg viewBox="0 0 32 32" className="w-full h-full p-2 text-white">
                                 <path fill="currentColor" d="M16 8l8 8-8 8-8-8z"/>
                               </svg>
                             </div>
@@ -563,32 +563,33 @@ export default function CreateInvoice() {
                   
                   {/* Geometric Footer Design - Red Angular Design matching template */}
                   <div className="relative mt-8">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="text-sm text-gray-600">
-                        Thank you for your business!
-                      </div>
-                      <div className="text-sm font-medium">
-                        Authorized Signed
-                      </div>
-                    </div>
                     {/* Exact angular red footer design matching template image */}
-                    <div className="relative h-16 overflow-hidden bg-gray-100">
-                      {/* Left diagonal section - covers about 60% of width */}
+                    <div className="relative h-16 overflow-hidden">
+                      {/* Left diagonal section */}
                       <div 
                         className="absolute bottom-0 left-0 h-full"
                         style={{ 
                           width: '62%',
                           backgroundColor: defaultTemplate.config?.primaryColor || '#B91C1C',
-                          clipPath: 'polygon(0% 0%, 100% 0%, 88% 100%, 0% 100%)'
+                          clipPath: 'polygon(0% 0%, 100% 0%, 85% 100%, 0% 100%)'
                         }}
                       ></div>
-                      {/* Right diagonal section - smaller piece on the right */}
+                      {/* Right diagonal section */}
                       <div 
                         className="absolute bottom-0 right-0 h-full"
                         style={{ 
                           width: '45%',
                           backgroundColor: defaultTemplate.config?.primaryColor || '#B91C1C',
-                          clipPath: 'polygon(35% 0%, 100% 0%, 100% 100%, 15% 100%)'
+                          clipPath: 'polygon(32% 0%, 100% 0%, 100% 100%, 12% 100%)'
+                        }}
+                      ></div>
+                      {/* White diagonal cut in the middle */}
+                      <div 
+                        className="absolute bottom-0 h-full bg-white"
+                        style={{ 
+                          left: '58%',
+                          width: '10%',
+                          clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)'
                         }}
                       ></div>
                     </div>

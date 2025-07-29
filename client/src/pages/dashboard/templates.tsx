@@ -78,10 +78,10 @@ const defaultTemplates: TemplateConfig[] = [
     borderColor: "#991b1b",
     fontFamily: "Inter",
     logoVisible: true,
-    showNotes: true,
+    showNotes: false,
     showTerms: false,
     showPayment: true,
-    notes: "Thank you for your business!",
+    notes: "",
     terms: "",
     fields: [
       { id: "description", name: "description", label: "Description", visible: true },
