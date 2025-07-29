@@ -388,21 +388,21 @@ export default function CreateInvoice() {
                       {/* Logo and Company */}
                       <div className="mb-8">
                         <div className="flex items-center mb-2">
-                          {defaultTemplate.config?.logoVisible && selectedCompany?.logoUrl ? (
-                            <img src={selectedCompany.logoUrl} alt="Company Logo" className="w-12 h-12 mr-3 object-contain rounded" />
-                          ) : defaultTemplate.config?.logoVisible && (
-                            <div className="w-12 h-12 mr-3" style={{ backgroundColor: defaultTemplate.config?.primaryColor }}>
+                          {selectedCompany?.logoUrl ? (
+                            <img src={selectedCompany.logoUrl} alt="Company Logo" className="w-12 h-12 mr-3 object-contain rounded bg-white" />
+                          ) : (
+                            <div className="w-12 h-12 mr-3 bg-white rounded" style={{ backgroundColor: '#991b1b' }}>
                               <svg viewBox="0 0 32 32" className="w-full h-full p-2 text-white">
                                 <path fill="currentColor" d="M16 8l8 8-8 8-8-8z"/>
                               </svg>
                             </div>
                           )}
                           <div>
-                            <h1 className="text-2xl font-bold">
+                            <h1 className="text-2xl font-bold text-white">
                               {selectedCompany?.name || 'Your Company Name'}
                             </h1>
                             {selectedCompany?.tagline && (
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-gray-200">
                                 {selectedCompany.tagline}
                               </p>
                             )}
@@ -561,16 +561,15 @@ export default function CreateInvoice() {
                     </div>
                   </div>
                   
-                  {/* Geometric Footer Design - Red Angular Design matching template */}
-                  <div className="relative mt-8">
-                    {/* Exact angular red footer design matching template image */}
+                  {/* Geometric Footer Design - Position at absolute bottom */}
+                  <div className="absolute bottom-0 left-0 right-0">
                     <div className="relative h-16 overflow-hidden">
                       {/* Left diagonal section */}
                       <div 
                         className="absolute bottom-0 left-0 h-full"
                         style={{ 
                           width: '62%',
-                          backgroundColor: defaultTemplate.config?.primaryColor || '#B91C1C',
+                          backgroundColor: defaultTemplate.config?.primaryColor || '#991b1b',
                           clipPath: 'polygon(0% 0%, 100% 0%, 85% 100%, 0% 100%)'
                         }}
                       ></div>
@@ -579,11 +578,11 @@ export default function CreateInvoice() {
                         className="absolute bottom-0 right-0 h-full"
                         style={{ 
                           width: '45%',
-                          backgroundColor: defaultTemplate.config?.primaryColor || '#B91C1C',
+                          backgroundColor: defaultTemplate.config?.primaryColor || '#991b1b',
                           clipPath: 'polygon(32% 0%, 100% 0%, 100% 100%, 12% 100%)'
                         }}
                       ></div>
-                      {/* White diagonal cut in the middle */}
+                      {/* White diagonal separator */}
                       <div 
                         className="absolute bottom-0 h-full bg-white"
                         style={{ 
