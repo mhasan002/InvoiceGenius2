@@ -38,6 +38,7 @@ interface TemplateConfig {
   fields: TemplateField[];
   showNotes: boolean;
   showTerms: boolean;
+  showPayment: boolean;
   notes: string;
   terms: string;
   customFields: Array<{ name: string; value: string }>;
@@ -56,6 +57,7 @@ const defaultTemplates: TemplateConfig[] = [
     logoVisible: true,
     showNotes: true,
     showTerms: true,
+    showPayment: true,
     notes: "PLEASE SEND REMITTANCE TO:\nHELLO@REALLYGREATSITE.COM\n\nPAYMENT IS REQUIRED WITHIN 10\nBUSINESS DAYS OF INVOICE DATE.",
     terms: "Payment terms and conditions apply. Late payments may incur additional fees.",
     fields: [
@@ -78,6 +80,7 @@ const defaultTemplates: TemplateConfig[] = [
     logoVisible: true,
     showNotes: true,
     showTerms: false,
+    showPayment: true,
     notes: "Thank you for your business!",
     terms: "",
     fields: [
@@ -290,13 +293,13 @@ export default function Templates() {
           </div>
         ))}
 
-        {/* Custom Fields */}
+        {/* Custom Fields - Display each as a full row */}
         {template.customFields.map((customField, index) => (
-          <div key={`custom-${index}`} className={`grid gap-4 p-3 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
-            <div>{customField.name}</div>
-            <div>{customField.value}</div>
-            <div>-</div>
-            <div>-</div>
+          <div key={`custom-${index}`} className="p-3 text-sm border-b" style={{ borderColor: template.borderColor }}>
+            <div className="flex justify-between">
+              <strong>{customField.name}</strong>
+              <span>{customField.value || '-'}</span>
+            </div>
           </div>
         ))}
 
@@ -320,6 +323,26 @@ export default function Templates() {
           </div>
         </div>
       </div>
+
+      {/* Payment Information Section */}
+      {template.showPayment && (
+        <div className="mt-8 p-4 border rounded-lg" style={{ borderColor: template.borderColor }}>
+          <h4 className="font-semibold mb-3" style={{ color: template.primaryColor }}>PAYMENT INFORMATION</h4>
+          <div className="grid grid-cols-2 gap-6 text-sm">
+            <div>
+              <p><strong>Payment Method:</strong> Bank Transfer</p>
+              <p><strong>Bank Name:</strong> Sample Bank</p>
+              <p><strong>Account Number:</strong> 1234567890</p>
+              <p><strong>Routing Number:</strong> 123456789</p>
+            </div>
+            <div>
+              <p><strong>Payment Due:</strong> 30 days</p>
+              <p><strong>Late Fee:</strong> 1.5% per month</p>
+              <p><strong>Discount:</strong> 2% if paid within 10 days</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="grid grid-cols-2 gap-8 mt-8">
@@ -432,13 +455,13 @@ export default function Templates() {
               </div>
             ))}
 
-            {/* Custom Fields */}
+            {/* Custom Fields - Display each as a full row */}
             {template.customFields.map((customField, index) => (
-              <div key={`custom-${index}`} className={`grid gap-4 py-2 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length}, 1fr)` }}>
-                <div>{customField.name}</div>
-                <div>{customField.value}</div>
-                <div>-</div>
-                <div>-</div>
+              <div key={`custom-${index}`} className="py-2 text-sm border-b" style={{ borderColor: template.borderColor }}>
+                <div className="flex justify-between">
+                  <strong>{customField.name}</strong>
+                  <span>{customField.value || '-'}</span>
+                </div>
               </div>
             ))}
 
@@ -461,6 +484,26 @@ export default function Templates() {
               </div>
             </div>
           </div>
+
+          {/* Payment Information Section */}
+          {template.showPayment && (
+            <div className="mt-8 p-4 border rounded-lg" style={{ borderColor: template.borderColor }}>
+              <h4 className="font-semibold mb-3" style={{ color: template.primaryColor }}>Payment Information</h4>
+              <div className="grid grid-cols-2 gap-6 text-sm">
+                <div>
+                  <p><strong>Payment Method:</strong> Bank Transfer</p>
+                  <p><strong>Bank Name:</strong> Sample Bank</p>
+                  <p><strong>Account Number:</strong> 1234567890</p>
+                  <p><strong>Routing Number:</strong> 123456789</p>
+                </div>
+                <div>
+                  <p><strong>Payment Due:</strong> 30 days</p>
+                  <p><strong>Late Fee:</strong> 1.5% per month</p>
+                  <p><strong>Discount:</strong> 2% if paid within 10 days</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Footer */}
           <div className="grid grid-cols-2 gap-8 mt-8">
@@ -655,32 +698,46 @@ export default function Templates() {
                           </Button>
                         </div>
                         {editingTemplate?.customFields.map((field, index) => (
-                          <div key={index} className="flex gap-2 mb-2">
-                            <Input
-                              value={field.name}
-                              onChange={(e) => {
-                                const updated = [...editingTemplate.customFields];
-                                updated[index] = { ...updated[index], name: e.target.value };
-                                updateTemplate({ customFields: updated });
-                              }}
-                              placeholder="Field name"
-                            />
-                            <Input
-                              value={field.value}
-                              onChange={(e) => {
-                                const updated = [...editingTemplate.customFields];
-                                updated[index] = { ...updated[index], value: e.target.value };
-                                updateTemplate({ customFields: updated });
-                              }}
-                              placeholder="Field value"
-                            />
-                            <Button 
-                              onClick={() => removeCustomField(index)}
-                              size="sm" 
-                              variant="outline"
-                            >
-                              Remove
-                            </Button>
+                          <div key={index} className="space-y-2 p-3 border rounded-lg mb-3">
+                            <div className="flex justify-between items-center">
+                              <Label className="font-medium">Custom Field {index + 1}</Label>
+                              <Button 
+                                onClick={() => removeCustomField(index)}
+                                size="sm" 
+                                variant="outline"
+                                className="h-8 px-2"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div className="space-y-2">
+                              <div>
+                                <Label className="text-xs text-gray-500">Field Name</Label>
+                                <Input
+                                  value={field.name}
+                                  onChange={(e) => {
+                                    const updated = [...editingTemplate.customFields];
+                                    updated[index] = { ...updated[index], name: e.target.value };
+                                    updateTemplate({ customFields: updated });
+                                  }}
+                                  placeholder="Enter field name"
+                                  className="mt-1"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs text-gray-500">Field Value</Label>
+                                <Input
+                                  value={field.value}
+                                  onChange={(e) => {
+                                    const updated = [...editingTemplate.customFields];
+                                    updated[index] = { ...updated[index], value: e.target.value };
+                                    updateTemplate({ customFields: updated });
+                                  }}
+                                  placeholder="Enter field value"
+                                  className="mt-1"
+                                />
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -781,6 +838,14 @@ export default function Templates() {
                           <Switch
                             checked={editingTemplate?.showTerms}
                             onCheckedChange={(checked) => updateTemplate({ showTerms: checked })}
+                          />
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <Label>Show Payment Information</Label>
+                          <Switch
+                            checked={editingTemplate?.showPayment}
+                            onCheckedChange={(checked) => updateTemplate({ showPayment: checked })}
                           />
                         </div>
 
