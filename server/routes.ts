@@ -1,6 +1,6 @@
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { storage } from "./storage";
 import { insertUserSchema, insertInvoiceSchema, signupUserSchema, loginUserSchema, resetPasswordSchema, insertServiceSchema, insertPackageSchema, insertCompanyProfileSchema, insertPaymentMethodSchema, insertTemplateSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
@@ -352,7 +352,9 @@ export function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/invoices", requireAuth, async (req: any, res) => {
     try {
+      console.log("Received invoice data:", JSON.stringify(req.body, null, 2));
       const validatedData = insertInvoiceSchema.parse(req.body);
+      console.log("Validated invoice data:", JSON.stringify(validatedData, null, 2));
       const invoice = await storage.createInvoice({
         ...validatedData,
         userId: req.session.userId,
@@ -360,7 +362,12 @@ export function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(invoice);
     } catch (error) {
       console.error("Error creating invoice:", error);
-      res.status(500).json({ error: "Failed to create invoice" });
+      if (error instanceof ZodError) {
+        console.error("Validation errors:", error.errors);
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Failed to create invoice" });
+      }
     }
   });
 

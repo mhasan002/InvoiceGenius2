@@ -132,20 +132,30 @@ export const resetPasswordSchema = z.object({
   path: ["confirmPassword"],
 });
 
-// Invoice schemas
-export const insertInvoiceSchema = createInsertSchema(invoices).omit({
-  id: true,
-  userId: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  // Convert number fields to handle both string and number inputs
-  taxPercentage: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
-  discountValue: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
+// Invoice schemas - Custom schema to handle number to string conversion
+export const insertInvoiceSchema = z.object({
+  invoiceNumber: z.string(),
+  clientName: z.string(),
+  clientPhone: z.string().optional(),
+  clientAddress: z.string().optional(),
+  clientEmail: z.string().optional(),
+  clientCustomFields: z.array(z.any()).default([]),
+  items: z.any(),
+  taxPercentage: z.union([z.string(), z.number()]).transform(val => String(val)).default("0"),
+  discountType: z.enum(["flat", "percentage"]).default("flat"),
+  discountValue: z.union([z.string(), z.number()]).transform(val => String(val)).default("0"),
+  platform: z.string().optional(),
+  companyProfileId: z.string().optional().nullable(),
+  paymentMethodId: z.string().optional().nullable(),
+  paymentReceivedBy: z.string().optional(),
+  templateId: z.string().optional(),
+  notes: z.string().optional().nullable(),
+  terms: z.string().optional().nullable(),
   subtotal: z.union([z.string(), z.number()]).transform(val => String(val)),
-  taxAmount: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
-  discountAmount: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
+  taxAmount: z.union([z.string(), z.number()]).transform(val => String(val)).default("0"),
+  discountAmount: z.union([z.string(), z.number()]).transform(val => String(val)).default("0"),
   total: z.union([z.string(), z.number()]).transform(val => String(val)),
+  status: z.string().default("draft"),
 });
 
 export const updateInvoiceSchema = insertInvoiceSchema.partial();
