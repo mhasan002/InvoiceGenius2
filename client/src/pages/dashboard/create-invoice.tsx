@@ -401,9 +401,11 @@ export default function CreateInvoice() {
                             <h1 className="text-2xl font-bold">
                               {selectedCompany?.name || 'Your Company Name'}
                             </h1>
-                            <p className="text-sm text-gray-600">
-                              {selectedCompany?.tagline || 'Company Tagline'}
-                            </p>
+                            {selectedCompany?.tagline && (
+                              <p className="text-sm text-gray-600">
+                                {selectedCompany.tagline}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -456,7 +458,7 @@ export default function CreateInvoice() {
                           <div className="text-center">QTY</div>
                           <div className="text-right">RATE</div>
                           <div className="text-right">AMOUNT</div>
-                          {defaultTemplate.config?.customFields?.map((field, idx) => (
+                          {defaultTemplate.config?.customFields?.map((field: any, idx: number) => (
                             <div key={idx} className="text-center">{field.name.toUpperCase()}</div>
                           ))}
                         </div>
@@ -486,7 +488,7 @@ export default function CreateInvoice() {
                             <div className="text-center">{item.quantity}</div>
                             <div className="text-right">${item.unitPrice.toFixed(2)}</div>
                             <div className="text-right">${item.total.toFixed(2)}</div>
-                            {defaultTemplate.config?.customFields?.map((field, idx) => {
+                            {defaultTemplate.config?.customFields?.map((field: any, idx: number) => {
                               // Get custom field value from clientCustomFields
                               const customFieldValue = clientCustomFields.find(cf => cf.name === field.name)?.value || field.value || '-';
                               return (
@@ -534,7 +536,7 @@ export default function CreateInvoice() {
                             <div>
                               <p><strong>Payment Method:</strong> {selectedPayment.type}</p>
                               {selectedPayment.fields && Object.entries(selectedPayment.fields).map(([key, value]) => (
-                                <p key={key}><strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong> {value}</p>
+                                <p key={key}><strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong> {String(value)}</p>
                               ))}
                               {paymentReceivedBy && <p><strong>Payment To:</strong> {paymentReceivedBy}</p>}
                             </div>
@@ -556,6 +558,34 @@ export default function CreateInvoice() {
                           <p className="whitespace-pre-line text-sm">{defaultTemplate.config?.terms || terms}</p>
                         </div>
                       )}
+                    </div>
+                  </div>
+                  
+                  {/* Geometric Footer Design - Red Angular Design */}
+                  <div className="relative mt-8">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        Thank you for your business!
+                      </div>
+                      <div className="text-sm font-medium">
+                        Authorized Signed
+                      </div>
+                    </div>
+                    {/* Angular red footer design */}
+                    <div className="relative mt-4 h-16 overflow-hidden">
+                      <div 
+                        className="absolute bottom-0 left-0 w-full h-full"
+                        style={{ 
+                          background: `linear-gradient(135deg, ${defaultTemplate.config?.primaryColor || '#DC2626'} 0%, ${defaultTemplate.config?.primaryColor || '#DC2626'} 60%, transparent 60%)`
+                        }}
+                      ></div>
+                      <div 
+                        className="absolute bottom-0 right-0 w-1/3 h-full"
+                        style={{ 
+                          backgroundColor: defaultTemplate.config?.primaryColor || '#DC2626',
+                          clipPath: 'polygon(30% 0%, 100% 0%, 100% 100%, 0% 100%)'
+                        }}
+                      ></div>
                     </div>
                   </div>
                 </div>
@@ -632,7 +662,7 @@ export default function CreateInvoice() {
                       <div className="uppercase text-center">QTY</div>
                       <div className="uppercase text-right">RATE</div>
                       <div className="uppercase text-right">AMOUNT</div>
-                      {defaultTemplate.config?.customFields?.map((field, idx) => (
+                      {defaultTemplate.config?.customFields?.map((field: any, idx: number) => (
                         <div key={idx} className="uppercase text-center">{field.name}</div>
                       ))}
                     </div>
@@ -662,7 +692,7 @@ export default function CreateInvoice() {
                         <div className="text-center">{item.quantity}</div>
                         <div className="text-right">${item.unitPrice.toFixed(2)}</div>
                         <div className="text-right">${item.total.toFixed(2)}</div>
-                        {defaultTemplate.config?.customFields?.map((field, idx) => {
+                        {defaultTemplate.config?.customFields?.map((field: any, idx: number) => {
                           // Get custom field value from clientCustomFields
                           const customFieldValue = clientCustomFields.find(cf => cf.name === field.name)?.value || field.value || '-';
                           return (
@@ -710,7 +740,7 @@ export default function CreateInvoice() {
                         <div>
                           <p><strong>Payment Method:</strong> {selectedPayment.type}</p>
                           {selectedPayment.fields && Object.entries(selectedPayment.fields).map(([key, value]) => (
-                            <p key={key}><strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong> {value}</p>
+                            <p key={key}><strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong> {String(value)}</p>
                           ))}
                           {paymentReceivedBy && <p><strong>Payment To:</strong> {paymentReceivedBy}</p>}
                         </div>

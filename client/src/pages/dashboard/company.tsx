@@ -401,13 +401,13 @@ export default function Company() {
                     </div>
                   )}
                   
-                  {profile.customFields && (profile.customFields as CustomField[]).length > 0 && (
+                  {profile.customFields && Array.isArray(profile.customFields) && profile.customFields.length > 0 && (
                     <div className="space-y-2">
                       <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">
                         Additional Information:
                       </h4>
                       <div className="space-y-1">
-                        {(profile.customFields as CustomField[]).map((field, index) => (
+                        {(profile.customFields as CustomField[]).map((field: CustomField, index: number) => (
                           <div key={index} className="text-sm">
                             <span className="font-medium text-gray-600 dark:text-gray-400">
                               {field.name}:
