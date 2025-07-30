@@ -61,9 +61,10 @@ const defaultTemplates: TemplateConfig[] = [
     notes: "PLEASE SEND REMITTANCE TO:\nHELLO@REALLYGREATSITE.COM\n\nPAYMENT IS REQUIRED WITHIN 10\nBUSINESS DAYS OF INVOICE DATE.",
     terms: "Payment terms and conditions apply. Late payments may incur additional fees.",
     fields: [
-      { id: "itemDescription", name: "itemDescription", label: "Item Description", visible: true },
-      { id: "price", name: "price", label: "Price", visible: true },
-      { id: "quantity", name: "quantity", label: "Quantity", visible: true },
+      { id: "description", name: "description", label: "Description", visible: true },
+      { id: "quantity", name: "quantity", label: "QTY", visible: true },
+      { id: "unitPrice", name: "unitPrice", label: "Rate", visible: false },
+      { id: "amount", name: "amount", label: "Amount", visible: false },
       { id: "total", name: "total", label: "Total", visible: true },
     ],
     customFields: [],
@@ -85,8 +86,9 @@ const defaultTemplates: TemplateConfig[] = [
     terms: "Payment is due within 30 days of invoice date. Late payments may incur additional fees.",
     fields: [
       { id: "description", name: "description", label: "Description", visible: true },
-      { id: "unitPrice", name: "unitPrice", label: "Unit Price", visible: true },
-      { id: "qty", name: "qty", label: "QTY", visible: true },
+      { id: "quantity", name: "quantity", label: "QTY", visible: true },
+      { id: "unitPrice", name: "unitPrice", label: "Rate", visible: false },
+      { id: "amount", name: "amount", label: "Amount", visible: false },
       { id: "total", name: "total", label: "Total", visible: true },
     ],
     customFields: [],
@@ -393,10 +395,11 @@ export default function Templates() {
           <div key={item} className={`grid gap-4 p-3 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${(template.fields?.filter(f => f.visible) || []).length + (template.customFields?.length || 0)}, 1fr)` }}>
             {template.fields?.filter(f => f.visible)?.map((field, index) => (
               <div key={field.id}>
-                {field.id === 'description' && 'YOUR DESCRIPTION'}
-                {field.id === 'unitPrice' && '$ 25.00'}
+                {field.id === 'description' && 'Sample Service'}
+                {field.id === 'unitPrice' && '$25.00'}
                 {field.id === 'quantity' && '2'}
-                {field.id === 'total' && '$ 50.00'}
+                {field.id === 'amount' && '$50.00'}
+                {field.id === 'total' && '$50.00'}
               </div>
             ))}
             {template.customFields?.map((customField, index) => (
@@ -537,19 +540,37 @@ export default function Templates() {
 
         {/* Items Table */}
         <div className="mb-6">
-          <div className="grid grid-cols-4 gap-4 p-3 text-sm font-medium bg-red-100" style={{ color: '#660033' }}>
-            <div className="uppercase">Description</div>
-            <div className="uppercase">Price</div>
-            <div className="uppercase">Qty</div>
-            <div className="uppercase">Total</div>
+          <div className={`grid gap-4 p-3 text-sm font-medium bg-red-100`} 
+               style={{ color: '#660033', gridTemplateColumns: `repeat(${(template.fields?.filter(f => f.visible) || []).length + (template.customFields?.length || 0)}, 1fr)` }}>
+            {template.fields?.filter(f => f.visible)?.map(field => (
+              <div key={field.id} className="uppercase">
+                {field.customLabel || field.label}
+              </div>
+            ))}
+            {template.customFields?.map((customField, index) => (
+              <div key={`custom-header-${index}`} className="uppercase">
+                {customField.name}
+              </div>
+            ))}
           </div>
           
-          {[{ desc: 'Website Design', price: 100, qty: 1 }, { desc: 'Logo Design', price: 150, qty: 2 }].map((item, index) => (
-            <div key={index} className={`grid grid-cols-4 gap-4 p-3 text-sm border-b ${index % 2 === 0 ? 'bg-red-50' : 'bg-white'}`}>
-              <div>{item.desc}</div>
-              <div>${item.price}</div>
-              <div>{item.qty}</div>
-              <div>${item.price * item.qty}</div>
+          {[1, 2].map((item, index) => (
+            <div key={item} className={`grid gap-4 p-3 text-sm border-b ${index % 2 === 0 ? 'bg-red-50' : 'bg-white'}`}
+                 style={{ gridTemplateColumns: `repeat(${(template.fields?.filter(f => f.visible) || []).length + (template.customFields?.length || 0)}, 1fr)` }}>
+              {template.fields?.filter(f => f.visible)?.map((field, fieldIndex) => (
+                <div key={field.id}>
+                  {field.id === 'description' && (index === 0 ? 'Website Design' : 'Logo Design')}
+                  {field.id === 'unitPrice' && (index === 0 ? '$100.00' : '$150.00')}
+                  {field.id === 'quantity' && '1'}
+                  {field.id === 'amount' && (index === 0 ? '$100.00' : '$150.00')}
+                  {field.id === 'total' && (index === 0 ? '$100.00' : '$150.00')}
+                </div>
+              ))}
+              {template.customFields?.map((customField, customIndex) => (
+                <div key={`custom-data-${customIndex}`}>
+                  {customField.value || '-'}
+                </div>
+              ))}
             </div>
           ))}
 
@@ -574,13 +595,24 @@ export default function Templates() {
         </div>
 
         {/* Footer */}
-        {template.showNotes && (
-          <div className="mt-6 text-sm text-center">
-            <div className="whitespace-pre-line">
-              {template.notes || "Thank you for your business!"}
+        <div className="mt-6 text-sm">
+          {template.showNotes && (
+            <div className="mb-4">
+              <h4 className="font-semibold mb-2">NOTES:</h4>
+              <div className="whitespace-pre-line">
+                {template.notes || "Thank you for your business!"}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+          {template.showTerms && template.terms && (
+            <div className="mb-4">
+              <h4 className="font-semibold mb-2">TERMS & CONDITIONS:</h4>
+              <div className="whitespace-pre-line">
+                {template.terms}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

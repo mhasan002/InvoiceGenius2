@@ -139,6 +139,15 @@ export default function CreateInvoice() {
       showNotes: true,
       showTerms: true,
       showPayment: true,
+      notes: "PLEASE SEND REMITTANCE TO:\nHELLO@REALLYGREATSITE.COM\n\nPAYMENT IS REQUIRED WITHIN 10\nBUSINESS DAYS OF INVOICE DATE.",
+      terms: "Payment terms and conditions apply. Late payments may incur additional fees.",
+      fields: [
+        { id: "description", name: "description", label: "Description", visible: true },
+        { id: "quantity", name: "quantity", label: "QTY", visible: true },
+        { id: "unitPrice", name: "unitPrice", label: "Rate", visible: false },
+        { id: "amount", name: "amount", label: "Amount", visible: false },
+        { id: "total", name: "total", label: "Total", visible: true },
+      ],
       customFields: []
     },
     {
@@ -153,6 +162,15 @@ export default function CreateInvoice() {
       showNotes: true,
       showTerms: true,
       showPayment: true,
+      notes: "Thank you for your business!",
+      terms: "Payment is due within 30 days of invoice date. Late payments may incur additional fees.",
+      fields: [
+        { id: "description", name: "description", label: "Description", visible: true },
+        { id: "quantity", name: "quantity", label: "QTY", visible: true },
+        { id: "unitPrice", name: "unitPrice", label: "Rate", visible: false },
+        { id: "amount", name: "amount", label: "Amount", visible: false },
+        { id: "total", name: "total", label: "Total", visible: true },
+      ],
       customFields: []
     }
   ];
@@ -505,12 +523,13 @@ export default function CreateInvoice() {
                         <div className="grid gap-4 pb-2 border-b-2 font-semibold text-sm uppercase" 
                              style={{ 
                                borderColor: defaultTemplate?.primaryColor,
-                               gridTemplateColumns: defaultTemplate?.customFields?.length > 0 ? `2fr 1fr 1fr 1fr 1fr` : `2fr 1fr 1fr 1fr`
+                               gridTemplateColumns: `repeat(${(defaultTemplate?.fields?.filter((f: any) => f.visible) || []).length + (defaultTemplate?.customFields?.length || 0)}, 1fr)`
                              }}>
-                          <div>DESCRIPTION</div>
-                          <div className="text-center">QTY</div>
-                          <div className="text-right">RATE</div>
-                          <div className="text-right">AMOUNT</div>
+                          {defaultTemplate?.fields?.filter((f: any) => f.visible)?.map((field: any) => (
+                            <div key={field.id} className={field.id === 'description' ? '' : 'text-center'}>
+                              {(field.customLabel || field.label || field.name).toUpperCase()}
+                            </div>
+                          ))}
                           {defaultTemplate?.customFields?.map((field: any, idx: number) => (
                             <div key={idx} className="text-center">{field.name.toUpperCase()}</div>
                           ))}
@@ -521,27 +540,34 @@ export default function CreateInvoice() {
                                style={{ 
                                  borderColor: '#E5E7EB',
                                  backgroundColor: idx % 2 === 1 ? '#fef2f2' : 'transparent',
-                                 gridTemplateColumns: defaultTemplate?.customFields?.length > 0 ? `2fr 1fr 1fr 1fr 1fr` : `2fr 1fr 1fr 1fr`
+                                 gridTemplateColumns: `repeat(${(defaultTemplate?.fields?.filter((f: any) => f.visible) || []).length + (defaultTemplate?.customFields?.length || 0)}, 1fr)`
                                }}>
-                            <div>
-                              <p>{item.name}</p>
-                              {item.type === 'package' && item.packageServices && (
-                                <div className="text-xs text-gray-600 mt-1">
-                                  <p>Package includes:</p>
-                                  <ul className="list-disc list-inside ml-2">
-                                    {item.packageServices.map((service, idx) => (
-                                      <li key={idx}>{service.name} {service.quantity && `(${service.quantity})`}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              {item.timePeriod && item.timePeriod > 1 && (
-                                <p className="text-xs text-gray-600">Duration: {item.timePeriod} month{item.timePeriod > 1 ? 's' : ''}</p>
-                              )}
-                            </div>
-                            <div className="text-center">{item.quantity}</div>
-                            <div className="text-right">${item.unitPrice.toFixed(2)}</div>
-                            <div className="text-right">${item.total.toFixed(2)}</div>
+                            {defaultTemplate?.fields?.filter((f: any) => f.visible)?.map((field: any) => (
+                              <div key={field.id} className={field.id === 'description' ? '' : 'text-center'}>
+                                {field.id === 'description' && (
+                                  <div>
+                                    <p>{item.name}</p>
+                                    {item.type === 'package' && item.packageServices && (
+                                      <div className="text-xs text-gray-600 mt-1">
+                                        <p>Package includes:</p>
+                                        <ul className="list-disc list-inside ml-2">
+                                          {item.packageServices.map((service, idx) => (
+                                            <li key={idx}>{service.name} {service.quantity && `(${service.quantity})`}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                    {item.timePeriod && item.timePeriod > 1 && (
+                                      <p className="text-xs text-gray-600">Duration: {item.timePeriod} month{item.timePeriod > 1 ? 's' : ''}</p>
+                                    )}
+                                  </div>
+                                )}
+                                {field.id === 'quantity' && item.quantity}
+                                {field.id === 'unitPrice' && `$${item.unitPrice.toFixed(2)}`}
+                                {field.id === 'amount' && `$${(item.unitPrice * item.quantity).toFixed(2)}`}
+                                {field.id === 'total' && `$${item.total.toFixed(2)}`}
+                              </div>
+                            ))}
                             {defaultTemplate?.customFields?.map((field: any, idx: number) => {
                               // Get custom field value from clientCustomFields
                               const customFieldValue = clientCustomFields.find(cf => cf.name === field.name)?.value || field.value || '-';
@@ -602,14 +628,14 @@ export default function CreateInvoice() {
                       {defaultTemplate?.showNotes && (
                         <div className="mb-6">
                           <h4 className="font-semibold mb-2">NOTES:</h4>
-                          <p className="whitespace-pre-line text-sm">{notes || 'Thank you for your business!'}</p>
+                          <p className="whitespace-pre-line text-sm">{defaultTemplate?.notes || notes || 'Thank you for your business!'}</p>
                         </div>
                       )}
                       
                       {defaultTemplate?.showTerms && (
                         <div className="mb-6">
                           <h4 className="font-semibold mb-2">TERMS & CONDITIONS:</h4>
-                          <p className="whitespace-pre-line text-sm">{terms || 'Payment is due within 30 days of invoice date. Late payments may incur additional fees.'}</p>
+                          <p className="whitespace-pre-line text-sm">{defaultTemplate?.terms || terms || 'Payment is due within 30 days of invoice date. Late payments may incur additional fees.'}</p>
                         </div>
                       )}
                   </div>
@@ -681,12 +707,13 @@ export default function CreateInvoice() {
                     <div className="grid gap-4 p-3 text-sm font-medium" 
                          style={{ 
                            backgroundColor: defaultTemplate?.secondaryColor || '#f3f4f6',
-                           gridTemplateColumns: defaultTemplate?.customFields?.length > 0 ? `2fr 1fr 1fr 1fr 1fr` : `2fr 1fr 1fr 1fr`
+                           gridTemplateColumns: `repeat(${(defaultTemplate?.fields?.filter((f: any) => f.visible) || []).length + (defaultTemplate?.customFields?.length || 0)}, 1fr)`
                          }}>
-                      <div className="uppercase">DESCRIPTION</div>
-                      <div className="uppercase text-center">QTY</div>
-                      <div className="uppercase text-right">RATE</div>
-                      <div className="uppercase text-right">AMOUNT</div>
+                      {defaultTemplate?.fields?.filter((f: any) => f.visible)?.map((field: any) => (
+                        <div key={field.id} className={field.id === 'description' ? 'uppercase' : 'uppercase text-center'}>
+                          {(field.customLabel || field.label || field.name).toUpperCase()}
+                        </div>
+                      ))}
                       {defaultTemplate?.customFields?.map((field: any, idx: number) => (
                         <div key={idx} className="uppercase text-center">{field.name}</div>
                       ))}
@@ -696,27 +723,34 @@ export default function CreateInvoice() {
                       <div key={item.id} className="grid gap-4 p-3 text-sm border-b" 
                            style={{ 
                              borderColor: defaultTemplate?.secondaryColor,
-                             gridTemplateColumns: defaultTemplate?.customFields?.length > 0 ? `2fr 1fr 1fr 1fr 1fr` : `2fr 1fr 1fr 1fr`
+                             gridTemplateColumns: `repeat(${(defaultTemplate?.fields?.filter((f: any) => f.visible) || []).length + (defaultTemplate?.customFields?.length || 0)}, 1fr)`
                            }}>
-                        <div>
-                          <p>{item.name}</p>
-                          {item.type === 'package' && item.packageServices && (
-                            <div className="text-xs text-gray-600 mt-1">
-                              <p>Package includes:</p>
-                              <ul className="list-disc list-inside ml-2">
-                                {item.packageServices.map((service, idx) => (
-                                  <li key={idx}>{service.name} {service.quantity && `(${service.quantity})`}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          {item.timePeriod && item.timePeriod > 1 && (
-                            <p className="text-xs text-gray-600">Duration: {item.timePeriod} month{item.timePeriod > 1 ? 's' : ''}</p>
-                          )}
-                        </div>
-                        <div className="text-center">{item.quantity}</div>
-                        <div className="text-right">${item.unitPrice.toFixed(2)}</div>
-                        <div className="text-right">${item.total.toFixed(2)}</div>
+                        {defaultTemplate?.fields?.filter((f: any) => f.visible)?.map((field: any) => (
+                          <div key={field.id} className={field.id === 'description' ? '' : 'text-center'}>
+                            {field.id === 'description' && (
+                              <div>
+                                <p>{item.name}</p>
+                                {item.type === 'package' && item.packageServices && (
+                                  <div className="text-xs text-gray-600 mt-1">
+                                    <p>Package includes:</p>
+                                    <ul className="list-disc list-inside ml-2">
+                                      {item.packageServices.map((service, idx) => (
+                                        <li key={idx}>{service.name} {service.quantity && `(${service.quantity})`}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {item.timePeriod && item.timePeriod > 1 && (
+                                  <p className="text-xs text-gray-600">Duration: {item.timePeriod} month{item.timePeriod > 1 ? 's' : ''}</p>
+                                )}
+                              </div>
+                            )}
+                            {field.id === 'quantity' && item.quantity}
+                            {field.id === 'unitPrice' && `$${item.unitPrice.toFixed(2)}`}
+                            {field.id === 'amount' && `$${(item.unitPrice * item.quantity).toFixed(2)}`}
+                            {field.id === 'total' && `$${item.total.toFixed(2)}`}
+                          </div>
+                        ))}
                         {defaultTemplate?.customFields?.map((field: any, idx: number) => {
                           // Get custom field value from clientCustomFields
                           const customFieldValue = clientCustomFields.find(cf => cf.name === field.name)?.value || field.value || '-';
@@ -779,13 +813,13 @@ export default function CreateInvoice() {
                       {defaultTemplate?.showNotes && (
                         <div className="text-sm">
                           <h4 className="font-semibold mb-2">NOTES:</h4>
-                          <div className="whitespace-pre-line">{notes || 'Thank you for your business!'}</div>
+                          <div className="whitespace-pre-line">{defaultTemplate?.notes || notes || 'Thank you for your business!'}</div>
                         </div>
                       )}
                       {defaultTemplate?.showTerms && (
                         <div className="text-sm mt-4">
                           <h4 className="font-semibold mb-2">TERMS & CONDITIONS:</h4>
-                          <div className="whitespace-pre-line">{terms || 'Payment is due within 30 days of invoice date. Late payments may incur additional fees.'}</div>
+                          <div className="whitespace-pre-line">{defaultTemplate?.terms || terms || 'Payment is due within 30 days of invoice date. Late payments may incur additional fees.'}</div>
                         </div>
                       )}
                     </div>
