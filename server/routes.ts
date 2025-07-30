@@ -168,6 +168,26 @@ const requireAuth = (req: any, res: any, next: any) => {
   next();
 };
 
+// Middleware to check specific permission for team members
+const requirePermission = (permission: string) => {
+  return (req: any, res: any, next: any) => {
+    // Admin users (regular users) have all permissions
+    if (req.session?.userType === "admin") {
+      return next();
+    }
+    
+    // Team members need specific permission
+    if (req.session?.userType === "team_member") {
+      if (!req.session?.permissions || !req.session.permissions[permission]) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      return next();
+    }
+    
+    return res.status(401).json({ message: "Authentication required" });
+  };
+};
+
 // Authentication routes
 const authRoutes = (app: Express) => {
   // Sign up
@@ -223,28 +243,72 @@ const authRoutes = (app: Express) => {
     try {
       const { email, password } = loginUserSchema.parse(req.body);
       
-      // Find user by email
+      // First, try to find regular user by email
       const user = email ? await storage.getUserByEmail(email) : null;
-      if (!user) {
+      if (user) {
+        // Check password for regular user
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        if (!isValidPassword) {
+          return res.status(401).json({ message: "Invalid credentials" });
+        }
+
+        // Create session for regular user
+        (req as any).session.userId = user.id;
+        (req as any).session.userEmail = user.email;
+        (req as any).session.username = user.username;
+        (req as any).session.userType = "admin";
+
+        return res.json({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          userType: "admin",
+          createdAt: user.createdAt,
+        });
+      }
+
+      // If no regular user found, try to find team member by email
+      const teamMember = email ? await storage.getTeamMemberByEmail(email) : null;
+      if (!teamMember) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      // Check password
-      const isValidPassword = await bcrypt.compare(password, user.password);
+      // Check if team member is active
+      if (teamMember.isActive !== "true") {
+        return res.status(401).json({ message: "Account is deactivated" });
+      }
+
+      // Check password for team member
+      const isValidPassword = await bcrypt.compare(password, teamMember.password);
       if (!isValidPassword) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      // Create session
-      (req as any).session.userId = user.id;
-      (req as any).session.userEmail = user.email;
-      (req as any).session.username = user.username;
+      // Create session for team member
+      (req as any).session.userId = teamMember.adminId; // Use admin's ID for data access
+      (req as any).session.teamMemberId = teamMember.id;
+      (req as any).session.userEmail = teamMember.email;
+      (req as any).session.username = teamMember.fullName || teamMember.email;
+      (req as any).session.userType = "team_member";
+      (req as any).session.permissions = {
+        canCreateInvoices: teamMember.canCreateInvoices === "true",
+        canDeleteInvoices: teamMember.canDeleteInvoices === "true",
+        canManageServices: teamMember.canManageServices === "true",
+        canManageCompanyProfiles: teamMember.canManageCompanyProfiles === "true",
+        canManagePaymentMethods: teamMember.canManagePaymentMethods === "true",
+        canManageTemplates: teamMember.canManageTemplates === "true",
+        canViewOnlyAssignedInvoices: teamMember.canViewOnlyAssignedInvoices === "true",
+        canManageTeamMembers: teamMember.canManageTeamMembers === "true",
+      };
 
       res.json({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        createdAt: user.createdAt,
+        id: teamMember.id,
+        username: teamMember.fullName || teamMember.email,
+        email: teamMember.email,
+        userType: "team_member",
+        role: teamMember.role,
+        permissions: (req as any).session.permissions,
+        createdAt: teamMember.createdAt,
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -266,16 +330,35 @@ const authRoutes = (app: Express) => {
   // Get current user
   app.get("/api/auth/me", requireAuth, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
+      if (req.session.userType === "team_member") {
+        // For team members, return their data
+        const teamMember = await storage.getTeamMember(req.session.teamMemberId);
+        if (!teamMember) {
+          return res.status(404).json({ message: "Team member not found" });
+        }
+        return res.json({
+          id: teamMember.id,
+          username: teamMember.fullName || teamMember.email,
+          email: teamMember.email,
+          userType: "team_member",
+          role: teamMember.role,
+          permissions: req.session.permissions,
+          createdAt: teamMember.createdAt,
+        });
+      } else {
+        // For regular users
+        const user = await storage.getUser(req.session.userId);
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        res.json({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          userType: "admin",
+          createdAt: user.createdAt,
+        });
       }
-      res.json({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        createdAt: user.createdAt,
-      });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch user" });
     }
@@ -352,15 +435,22 @@ export function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/invoices", requireAuth, async (req: any, res) => {
+  app.post("/api/invoices", requireAuth, requirePermission("canCreateInvoices"), async (req: any, res) => {
     try {
       console.log("Received invoice data:", JSON.stringify(req.body, null, 2));
       const validatedData = insertInvoiceSchema.parse(req.body);
       console.log("Validated invoice data:", JSON.stringify(validatedData, null, 2));
-      const invoice = await storage.createInvoice({
+      const invoiceData = {
         ...validatedData,
         userId: req.session.userId,
-      });
+      };
+      
+      // If this is a team member, track who created it
+      if (req.session.userType === "team_member") {
+        invoiceData.createdBy = req.session.teamMemberId;
+      }
+      
+      const invoice = await storage.createInvoice(invoiceData);
       res.status(201).json(invoice);
     } catch (error) {
       console.error("Error creating invoice:", error);
@@ -402,7 +492,7 @@ export function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/invoices/:id", requireAuth, async (req: any, res) => {
+  app.delete("/api/invoices/:id", requireAuth, requirePermission("canDeleteInvoices"), async (req: any, res) => {
     try {
       const invoice = await storage.getInvoice(req.params.id);
       if (!invoice || invoice.userId !== req.session.userId) {
@@ -431,7 +521,7 @@ export function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/services", requireAuth, async (req: any, res) => {
+  app.post("/api/services", requireAuth, requirePermission("canManageServices"), async (req: any, res) => {
     try {
       const validatedData = insertServiceSchema.parse(req.body);
       const service = await storage.createService({
@@ -445,7 +535,7 @@ export function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/services/:id", requireAuth, async (req: any, res) => {
+  app.put("/api/services/:id", requireAuth, requirePermission("canManageServices"), async (req: any, res) => {
     try {
       const service = await storage.getService(req.params.id);
       if (!service || service.userId !== req.session.userId) {
@@ -461,7 +551,7 @@ export function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/services/:id", requireAuth, async (req: any, res) => {
+  app.delete("/api/services/:id", requireAuth, requirePermission("canManageServices"), async (req: any, res) => {
     try {
       const service = await storage.getService(req.params.id);
       if (!service || service.userId !== req.session.userId) {
@@ -490,7 +580,7 @@ export function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/packages", requireAuth, async (req: any, res) => {
+  app.post("/api/packages", requireAuth, requirePermission("canManageServices"), async (req: any, res) => {
     try {
       const validatedData = insertPackageSchema.parse(req.body);
       const packageData = await storage.createPackage({
@@ -549,7 +639,7 @@ export function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/company-profiles", requireAuth, async (req: any, res) => {
+  app.post("/api/company-profiles", requireAuth, requirePermission("canManageCompanyProfiles"), async (req: any, res) => {
     try {
       const validatedData = insertCompanyProfileSchema.parse(req.body);
       const profile = await storage.createCompanyProfile({
@@ -623,7 +713,7 @@ export function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/payment-methods", requireAuth, async (req: any, res) => {
+  app.post("/api/payment-methods", requireAuth, requirePermission("canManagePaymentMethods"), async (req: any, res) => {
     try {
       const validatedData = insertPaymentMethodSchema.parse(req.body);
       const method = await storage.createPaymentMethod({
@@ -682,7 +772,7 @@ export function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/templates", requireAuth, async (req: any, res) => {
+  app.post("/api/templates", requireAuth, requirePermission("canManageTemplates"), async (req: any, res) => {
     try {
       const validatedData = insertTemplateSchema.parse(req.body);
       const template = await storage.createTemplate({
@@ -759,7 +849,7 @@ export function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/team-members", requireAuth, async (req: any, res) => {
+  app.post("/api/team-members", requireAuth, requirePermission("canManageTeamMembers"), async (req: any, res) => {
     try {
       console.log('Received team member data:', req.body);
       

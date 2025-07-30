@@ -5,6 +5,18 @@ interface User {
   id: string;
   username: string;
   email: string | null;
+  userType?: "admin" | "team_member";
+  role?: string;
+  permissions?: {
+    canCreateInvoices?: boolean;
+    canDeleteInvoices?: boolean;
+    canManageServices?: boolean;
+    canManageCompanyProfiles?: boolean;
+    canManagePaymentMethods?: boolean;
+    canManageTemplates?: boolean;
+    canViewOnlyAssignedInvoices?: boolean;
+    canManageTeamMembers?: boolean;
+  };
   createdAt: string;
 }
 
@@ -15,6 +27,9 @@ interface AuthContextType {
   signup: (username: string, email: string, password: string, confirmPassword: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
+  hasPermission: (permission: string) => boolean;
+  isAdmin: boolean;
+  isTeamMember: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   
   // Query to get current user
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading } = useQuery<User>({
     queryKey: ['/api/auth/me'],
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -112,6 +127,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await logoutMutation.mutateAsync();
   };
 
+  // Helper methods for team member permissions
+  const hasPermission = (permission: string): boolean => {
+    if (!user) return false;
+    // Admin users have all permissions
+    if (user.userType === "admin" || !user.userType) return true; // Default to admin for existing users
+    // Team members need specific permission
+    if (user.userType === "team_member" && user.permissions) {
+      return user.permissions[permission as keyof typeof user.permissions] === true;
+    }
+    return false;
+  };
+
+  const isAdmin = user?.userType === "admin" || (!user?.userType && !!user); // Default to admin for existing users
+  const isTeamMember = user?.userType === "team_member";
+
   const value: AuthContextType = {
     user: user || null,
     isLoading,
@@ -119,6 +149,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signup,
     logout,
     isAuthenticated: !!user,
+    hasPermission,
+    isAdmin,
+    isTeamMember,
   };
 
   return (
