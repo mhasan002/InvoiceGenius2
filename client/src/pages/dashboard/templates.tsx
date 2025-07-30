@@ -484,14 +484,12 @@ export default function Templates() {
 
   const MinimalistPreview = ({ template }: { template: TemplateConfig }) => (
     <div className="bg-white shadow-lg rounded-lg max-w-2xl mx-auto relative overflow-hidden" style={{ color: template.textColor, fontFamily: template.fontFamily }}>
-      {/* Geometric Header Design - Clean and Bold like Borcelle */}
-      <div className="relative h-24 w-full bg-white overflow-hidden">
-        {/* Main diagonal shape - Large and prominent */}
-        <div className="absolute top-0 left-0 w-full h-24" style={{ backgroundColor: template.primaryColor || '#991b1b' }}>
-          <svg viewBox="0 0 400 100" className="w-full h-full">
-            <polygon points="0,0 400,0 320,100 0,100" fill="currentColor" />
-          </svg>
-        </div>
+      {/* Geometric Header Design - Single color red */}
+      <div className="relative h-24 w-full overflow-hidden" style={{ backgroundColor: template.primaryColor || '#991b1b' }}>
+        {/* Single color header with diagonal cut */}
+        <svg viewBox="0 0 400 100" className="w-full h-full">
+          <polygon points="0,0 400,0 320,100 0,100" fill="currentColor" />
+        </svg>
       </div>
       
       <div className="p-8 pt-4 relative z-10 bg-white">
