@@ -32,6 +32,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
   
   // Invoice operations
   getInvoices(userId?: string): Promise<Invoice[]>;
@@ -120,6 +121,12 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const result = await this.db.insert(users).values(insertUser).returning();
     return result[0];
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    // Delete user and cascade to related records
+    const result = await this.db.delete(users).where(eq(users.id, id)).returning();
+    return result.length > 0;
   }
 
   async getInvoices(userId?: string): Promise<Invoice[]> {
@@ -371,10 +378,34 @@ export class MemStorage implements IStorage {
       ...insertUser, 
       id, 
       email: insertUser.email || null,
+      fullName: insertUser.fullName || null,
+      companyName: insertUser.companyName || null,
+      profilePicture: insertUser.profilePicture || null,
       createdAt: new Date() 
     };
     this.users.set(id, user);
     return user;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    const deleted = this.users.delete(id);
+    // Also delete related data
+    if (deleted) {
+      // Delete user's invoices
+      const userInvoices = Array.from(this.invoices.keys()).filter(invoiceId => {
+        const invoice = this.invoices.get(invoiceId);
+        return invoice?.userId === id;
+      });
+      userInvoices.forEach(invoiceId => this.invoices.delete(invoiceId));
+      
+      // Delete user's services, packages, etc.
+      const userServices = Array.from(this.services.keys()).filter(serviceId => {
+        const service = this.services.get(serviceId);
+        return service?.userId === id;
+      });
+      userServices.forEach(serviceId => this.services.delete(serviceId));
+    }
+    return deleted;
   }
 
   async getInvoices(userId?: string): Promise<Invoice[]> {

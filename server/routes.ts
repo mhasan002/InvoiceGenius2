@@ -2,7 +2,7 @@ import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { z, ZodError } from "zod";
 import { storage } from "./storage";
-import { insertUserSchema, insertInvoiceSchema, signupUserSchema, loginUserSchema, resetPasswordSchema, insertServiceSchema, insertPackageSchema, insertCompanyProfileSchema, insertPaymentMethodSchema, insertTemplateSchema, insertTeamMemberSchema, updateTeamMemberSchema } from "@shared/schema";
+import { insertUserSchema, insertInvoiceSchema, signupUserSchema, loginUserSchema, resetPasswordSchema, updateUserProfileSchema, changePasswordSchema, deleteAccountSchema, insertServiceSchema, insertPackageSchema, insertCompanyProfileSchema, insertPaymentMethodSchema, insertTemplateSchema, insertTeamMemberSchema, updateTeamMemberSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import session from "express-session";
 
@@ -355,6 +355,9 @@ const authRoutes = (app: Express) => {
           id: user.id,
           username: user.username,
           email: user.email,
+          fullName: user.fullName,
+          companyName: user.companyName,
+          profilePicture: user.profilePicture,
           userType: "admin",
           createdAt: user.createdAt,
         });
@@ -412,6 +415,113 @@ const authRoutes = (app: Express) => {
     } catch (error) {
       console.error("Password reset error:", error);
       res.status(400).json({ message: "Failed to reset password" });
+    }
+  });
+
+  // Update user profile
+  app.put("/api/auth/profile", requireAuth, async (req: any, res) => {
+    try {
+      const validatedData = updateUserProfileSchema.parse(req.body);
+      
+      // Check if email is being changed and ensure it's unique
+      if (validatedData.email) {
+        const existingUser = await storage.getUserByEmail(validatedData.email);
+        if (existingUser && existingUser.id !== req.session.userId) {
+          return res.status(400).json({ message: "Email already in use" });
+        }
+      }
+
+      const updatedUser = await storage.updateUser(req.session.userId, validatedData);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Update session data if username or email changed
+      if (validatedData.email) {
+        req.session.userEmail = validatedData.email;
+      }
+
+      res.json({
+        id: updatedUser.id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        fullName: updatedUser.fullName,
+        companyName: updatedUser.companyName,
+        profilePicture: updatedUser.profilePicture,
+        userType: req.session.userType || "admin",
+        createdAt: updatedUser.createdAt,
+      });
+    } catch (error) {
+      console.error("Profile update error:", error);
+      if (error instanceof Error && error.message.includes('validation')) {
+        return res.status(400).json({ message: "Invalid profile data" });
+      }
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  // Change password
+  app.put("/api/auth/change-password", requireAuth, async (req: any, res) => {
+    try {
+      const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+      
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Verify current password
+      const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+      if (!isValidPassword) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
+      
+      // Update password
+      await storage.updateUser(req.session.userId, { password: hashedPassword });
+
+      res.json({ message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Password change error:", error);
+      res.status(400).json({ message: "Failed to change password" });
+    }
+  });
+
+  // Delete account
+  app.delete("/api/auth/account", requireAuth, async (req: any, res) => {
+    try {
+      const { password } = deleteAccountSchema.parse(req.body);
+      
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Verify password
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(400).json({ message: "Password is incorrect" });
+      }
+
+      // Delete user and all related data
+      const deleted = await storage.deleteUser(req.session.userId);
+      if (!deleted) {
+        return res.status(500).json({ message: "Failed to delete account" });
+      }
+
+      // Destroy session
+      req.session.destroy((err: any) => {
+        if (err) {
+          console.error("Session destruction error:", err);
+        }
+        res.clearCookie('connect.sid');
+        res.json({ message: "Account deleted successfully" });
+      });
+    } catch (error) {
+      console.error("Account deletion error:", error);
+      res.status(500).json({ message: "Failed to delete account" });
     }
   });
 };

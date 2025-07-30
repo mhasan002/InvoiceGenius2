@@ -1,0 +1,87 @@
+Settings
+Purpose:
+This page allows users to manage their account settings, including updating personal information, changing password or email, and securely deleting their account.
+
+Database: PostgreSQL via Supabase
+
+🖥️ UI Layout Design
+📌 1. Page Header
+Title: “Account Settings”
+
+Subtext: “Manage your login credentials and account preferences.”
+
+🧑‍💼 2. Profile Information Section
+Fields:
+Full Name
+
+Email (editable)
+
+Company Name (optional)
+
+Profile Picture (optional upload – can be square format only)
+
+✅ Save Changes button
+✅ Validation: email format, name must not be blank
+✅ All updated info is written to Supabase
+
+🔐 3. Change Password Section
+Input fields:
+Current Password
+
+New Password
+
+Confirm New Password
+
+✅ On submission:
+
+Password must be strong (min 8 characters, include symbols/numbers)
+
+New passwords must match
+
+Current password is validated
+
+If successful: store new hashed password to Supabase and show confirmation message
+
+🗑️ 4. Delete Account Section
+⚠️ Red warning box: “This will permanently delete your account and all associated data. This action cannot be undone.”
+
+Button: Delete My Account (styled in red)
+
+✅ Clicking this prompts:
+
+Final confirmation modal (“Are you sure?”)
+
+Requires password re-entry before deletion
+
+If confirmed:
+
+Remove user’s record from users table
+
+Mark all related data (invoices, team links, profiles) as deleted by user
+
+Optional: Archive in a separate table for audit if needed
+
+🔗 Database (PostgreSQL via Supabase)
+All updates go directly to users table:
+
+email, name, password_hash
+
+Profile picture saved to Supabase storage (if implemented)
+
+Deletion triggers cascading or status update across:
+
+invoices (created_by = deleted)
+
+team_members (remove or disable)
+
+company_profiles, services, templates (if user owns them)
+
+✅ Secure password handling using bcrypt (or Supabase Auth functions if enabled)
+
+📱 Responsive Design
+Sections stack vertically on small screens
+
+Password section collapsible for better UX
+
+Delete account section uses alert-style warning card
+

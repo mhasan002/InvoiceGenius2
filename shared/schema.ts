@@ -8,6 +8,9 @@ export const users = pgTable("users", {
   username: text("username").notNull(),
   email: varchar("email", { length: 255 }).unique(),
   password: text("password").notNull(),
+  fullName: text("full_name"),
+  companyName: text("company_name"),
+  profilePicture: text("profile_picture"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -277,3 +280,29 @@ export type InsertTemplate = z.infer<typeof insertTemplateSchema>;
 
 export type TeamMember = typeof teamMembers.$inferSelect;
 export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
+
+// User profile update schemas
+export const updateUserProfileSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  email: z.string().email("Invalid email format"),
+  fullName: z.string().optional(),
+  companyName: z.string().optional(),
+  profilePicture: z.string().optional(),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters long"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, "Password is required to delete account"),
+});
+
+export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
+export type ChangePassword = z.infer<typeof changePasswordSchema>;
+export type DeleteAccount = z.infer<typeof deleteAccountSchema>;
