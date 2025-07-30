@@ -438,10 +438,10 @@ export default function CreateInvoice() {
                     ></div>
                     {/* Geometric diagonal cut */}
                     <div 
-                      className="absolute top-0 right-0 w-24 h-16"
+                      className="absolute top-0 right-0 w-32 h-16"
                       style={{ 
                         backgroundColor: defaultTemplate?.primaryColor || '#991b1b',
-                        clipPath: 'polygon(20% 0%, 100% 0%, 100% 100%, 0% 100%)'
+                        clipPath: 'polygon(30% 0%, 100% 0%, 100% 100%, 0% 100%)'
                       }}
                     ></div>
                     <div className="p-8 pt-8 relative z-10">
@@ -622,21 +622,7 @@ export default function CreateInvoice() {
                     </div>
                   </div>
                   
-                  {/* Geometric Footer */}
-                  <div className="relative mt-8">
-                    <div 
-                      className="w-full h-4"
-                      style={{ backgroundColor: defaultTemplate?.primaryColor || '#991b1b' }}
-                    ></div>
-                    {/* Geometric diagonal cut for footer */}
-                    <div 
-                      className="absolute bottom-0 left-0 w-16 h-4"
-                      style={{ 
-                        backgroundColor: defaultTemplate?.primaryColor || '#991b1b',
-                        clipPath: 'polygon(0% 0%, 80% 0%, 100% 100%, 0% 100%)'
-                      }}
-                    ></div>
-                  </div>
+
                 </div>
               ) : (
                 // Professional Template (default)

@@ -474,7 +474,7 @@ export default function Templates() {
           className="absolute top-0 right-0 w-32 h-24"
           style={{ 
             backgroundColor: template.primaryColor,
-            clipPath: 'polygon(20% 0%, 100% 0%, 100% 100%, 0% 100%)'
+            clipPath: 'polygon(30% 0%, 100% 0%, 100% 100%, 0% 100%)'
           }}
         ></div>
         <div className="p-8 pt-8 relative z-10">
@@ -796,7 +796,7 @@ export default function Templates() {
                     <TabsContent value="fields" className="space-y-4">
                       <div>
                         <h4 className="font-semibold mb-3">Table Fields</h4>
-                        {editingTemplate?.fields.map((field) => (
+                        {editingTemplate?.fields?.map((field) => (
                           <div key={field.id} className="flex items-center justify-between p-3 border rounded-lg">
                             <div className="flex-1">
                               <Input
@@ -822,7 +822,7 @@ export default function Templates() {
                             Add Field
                           </Button>
                         </div>
-                        {editingTemplate?.customFields.map((field, index) => (
+                        {editingTemplate?.customFields?.map((field, index) => (
                           <div key={index} className="space-y-2 p-3 border rounded-lg mb-3">
                             <div className="flex justify-between items-center">
                               <Label className="font-medium">Custom Field {index + 1}</Label>
