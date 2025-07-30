@@ -1,82 +1,163 @@
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import React, { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
-  FileText, 
-  Plus, 
   Search, 
   Filter, 
   Eye, 
   Download, 
-  Edit,
-  Trash2,
-  MoreHorizontal
+  Trash2, 
+  Calendar,
+  FileText,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
+import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 
-export default function Invoices() {
-  // Mock data - would come from API in real app
-  const invoices = [
-    {
-      id: 'INV-001',
-      client: 'Acme Corporation',
-      amount: 2450.00,
-      status: 'paid',
-      date: '2024-01-15',
-      dueDate: '2024-02-15'
-    },
-    {
-      id: 'INV-002',
-      client: 'Tech Solutions Ltd',
-      amount: 1850.00,
-      status: 'pending',
-      date: '2024-01-14',
-      dueDate: '2024-02-14'
-    },
-    {
-      id: 'INV-003',
-      client: 'Digital Agency',
-      amount: 3200.00,
-      status: 'overdue',
-      date: '2024-01-10',
-      dueDate: '2024-02-10'
-    },
-    {
-      id: 'INV-004',
-      client: 'Startup Inc',
-      amount: 890.00,
-      status: 'draft',
-      date: '2024-01-16',
-      dueDate: '2024-02-16'
-    },
-    {
-      id: 'INV-005',
-      client: 'Enterprise Corp',
-      amount: 5500.00,
-      status: 'sent',
-      date: '2024-01-18',
-      dueDate: '2024-02-18'
-    }
-  ];
+interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  clientName: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  clientAddress?: string;
+  platform?: string;
+  total: number;
+  paymentReceivedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+  items: any[];
+  status?: string;
+}
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-      case 'overdue':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-      case 'draft':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
-      case 'sent':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+const dateRangePresets = [
+  { label: 'Last 7 days', value: '7days' },
+  { label: 'Last 30 days', value: '30days' },
+  { label: 'This Month', value: 'month' },
+  { label: 'Custom Range', value: 'custom' }
+];
+
+export default function InvoicesPage() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // State management
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateRange, setDateRange] = useState('30days');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const itemsPerPage = 10;
+
+  // Calculate date range
+  const getDateRange = () => {
+    const now = new Date();
+    switch (dateRange) {
+      case '7days':
+        return {
+          start: format(subDays(now, 7), 'yyyy-MM-dd'),
+          end: format(now, 'yyyy-MM-dd')
+        };
+      case '30days':
+        return {
+          start: format(subDays(now, 30), 'yyyy-MM-dd'),
+          end: format(now, 'yyyy-MM-dd')
+        };
+      case 'month':
+        return {
+          start: format(startOfMonth(now), 'yyyy-MM-dd'),
+          end: format(endOfMonth(now), 'yyyy-MM-dd')
+        };
+      case 'custom':
+        return {
+          start: customStartDate || format(subDays(now, 30), 'yyyy-MM-dd'),
+          end: customEndDate || format(now, 'yyyy-MM-dd')
+        };
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+        return {
+          start: format(subDays(now, 30), 'yyyy-MM-dd'),
+          end: format(now, 'yyyy-MM-dd')
+        };
     }
+  };
+
+  // Fetch invoices
+  const { data: invoices = [], isLoading, error } = useQuery({
+    queryKey: ['/api/invoices'],
+    select: (data: Invoice[]) => {
+      const { start, end } = getDateRange();
+      
+      return data
+        .filter(invoice => {
+          // Date filtering
+          const invoiceDate = new Date(invoice.createdAt);
+          const startDate = new Date(start);
+          const endDate = new Date(end);
+          const isInDateRange = invoiceDate >= startDate && invoiceDate <= endDate;
+          
+          // Search filtering
+          const searchLower = searchQuery.toLowerCase();
+          const matchesSearch = !searchQuery || 
+            invoice.clientName?.toLowerCase().includes(searchLower) ||
+            invoice.invoiceNumber?.toLowerCase().includes(searchLower) ||
+            invoice.platform?.toLowerCase().includes(searchLower);
+          
+          return isInDateRange && matchesSearch;
+        })
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+  });
+
+  // Pagination
+  const paginatedInvoices = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return invoices.slice(startIndex, startIndex + itemsPerPage);
+  }, [invoices, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(invoices.length / itemsPerPage);
+
+  // Delete invoice mutation
+  const deleteMutation = useMutation({
+    mutationFn: (invoiceId: string) => apiRequest(`/api/invoices/${invoiceId}`, {
+      method: 'DELETE'
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
+      toast({
+        title: "Success",
+        description: "Invoice deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete invoice",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleDeleteInvoice = (invoiceId: string) => {
+    deleteMutation.mutate(invoiceId);
+  };
+
+  const handleDownloadPDF = (invoice: Invoice) => {
+    // TODO: Implement PDF download functionality
+    toast({
+      title: "PDF Download",
+      description: "PDF download feature coming soon",
+    });
   };
 
   const formatCurrency = (amount: number) => {
@@ -86,199 +167,301 @@ export default function Invoices() {
     }).format(amount);
   };
 
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString), 'MMM dd, yyyy');
+  };
+
+  if (error) {
+    return (
+      <DashboardLayout 
+        title="Invoices" 
+        description="View and filter all created invoices"
+      >
+        <div className="text-center py-12">
+          <p className="text-red-600">Error loading invoices: {(error as any)?.message}</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout 
       title="Invoices" 
-      description="Manage all your invoices in one place"
+      description="View and filter all created invoices"
     >
       <div className="space-y-6">
-        {/* Header Actions */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-          <div className="flex flex-col sm:flex-row gap-4 flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input 
-                placeholder="Search invoices..." 
-                className="pl-9 w-full sm:w-80"
-              />
-            </div>
-            <Select>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="sent">Sent</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="overdue">Overdue</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Invoice
-          </Button>
-        </div>
 
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Total Invoices
-                  </p>
-                  <p className="text-2xl font-bold">{invoices.length}</p>
-                </div>
-                <FileText className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Total Amount
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(invoices.reduce((sum, inv) => sum + inv.amount, 0))}
-                  </p>
-                </div>
-                <div className="text-green-600">$</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Paid
-                  </p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {invoices.filter(inv => inv.status === 'paid').length}
-                  </p>
-                </div>
-                <div className="w-3 h-3 rounded-full bg-green-600"></div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Overdue
-                  </p>
-                  <p className="text-2xl font-bold text-red-600">
-                    {invoices.filter(inv => inv.status === 'overdue').length}
-                  </p>
-                </div>
-                <div className="w-3 h-3 rounded-full bg-red-600"></div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Invoices Table */}
+        {/* Filters Section */}
         <Card>
-          <CardHeader>
-            <CardTitle>All Invoices</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">
-                      Invoice
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">
-                      Client
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">
-                      Amount
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">
-                      Status
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">
-                      Date
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">
-                      Due Date
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoices.map((invoice) => (
-                    <tr 
-                      key={invoice.id} 
-                      className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                    >
-                      <td className="py-4 px-4">
-                        <div className="font-medium text-gray-900 dark:text-white">
-                          {invoice.id}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-gray-700 dark:text-gray-300">
-                        {invoice.client}
-                      </td>
-                      <td className="py-4 px-4 font-medium text-gray-900 dark:text-white">
-                        {formatCurrency(invoice.amount)}
-                      </td>
-                      <td className="py-4 px-4">
-                        <Badge className={getStatusColor(invoice.status)}>
-                          {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                        </Badge>
-                      </td>
-                      <td className="py-4 px-4 text-gray-700 dark:text-gray-300">
-                        {new Date(invoice.date).toLocaleDateString()}
-                      </td>
-                      <td className="py-4 px-4 text-gray-700 dark:text-gray-300">
-                        {new Date(invoice.dueDate).toLocaleDateString()}
-                      </td>
-                      <td className="py-4 px-4">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Download className="h-4 w-4 mr-2" />
-                              Download
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <CardContent className="p-4">
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Search Field */}
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search by client name, invoice number, or platform..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              {/* Date Range Picker */}
+              <div className="flex gap-2">
+                <Select value={dateRange} onValueChange={setDateRange}>
+                  <SelectTrigger className="w-48">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Select date range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dateRangePresets.map((preset) => (
+                      <SelectItem key={preset.value} value={preset.value}>
+                        {preset.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
+            {/* Custom Date Range Inputs */}
+            {dateRange === 'custom' && (
+              <div className="flex gap-2 mt-4">
+                <div className="flex-1">
+                  <Input
+                    type="date"
+                    placeholder="Start date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                  />
+                </div>
+                <div className="flex-1">
+                  <Input
+                    type="date"
+                    placeholder="End date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
+
+        {/* Results Summary */}
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Showing {paginatedInvoices.length} of {invoices.length} invoices
+          </p>
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Total Value: {formatCurrency(invoices.reduce((sum, invoice) => sum + invoice.total, 0))}
+          </div>
+        </div>
+
+        {/* Invoice Table */}
+        <Card>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <p className="mt-2 text-gray-600">Loading invoices...</p>
+              </div>
+            ) : paginatedInvoices.length === 0 ? (
+              <div className="p-8 text-center">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No invoices found</h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {searchQuery || dateRange !== '30days' 
+                    ? 'Try adjusting your search or filter criteria.' 
+                    : 'Create your first invoice to get started.'}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice No.</TableHead>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Platform</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Received By</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedInvoices.map((invoice) => (
+                      <TableRow key={invoice.id}>
+                        <TableCell className="font-medium">
+                          {invoice.invoiceNumber || 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{invoice.clientName}</div>
+                            {invoice.clientEmail && (
+                              <div className="text-sm text-gray-500">{invoice.clientEmail}</div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>{formatDate(invoice.createdAt)}</TableCell>
+                        <TableCell>
+                          {invoice.platform ? (
+                            <Badge variant="outline">{invoice.platform}</Badge>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {formatCurrency(invoice.total)}
+                        </TableCell>
+                        <TableCell>
+                          {invoice.paymentReceivedBy || 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setSelectedInvoice(invoice)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                <DialogHeader>
+                                  <DialogTitle>Invoice #{selectedInvoice?.invoiceNumber}</DialogTitle>
+                                </DialogHeader>
+                                {selectedInvoice && (
+                                  <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <h4 className="font-semibold">Client Information</h4>
+                                        <p>{selectedInvoice.clientName}</p>
+                                        {selectedInvoice.clientEmail && <p>{selectedInvoice.clientEmail}</p>}
+                                        {selectedInvoice.clientPhone && <p>{selectedInvoice.clientPhone}</p>}
+                                        {selectedInvoice.clientAddress && (
+                                          <p className="whitespace-pre-line">{selectedInvoice.clientAddress}</p>
+                                        )}
+                                      </div>
+                                      <div>
+                                        <h4 className="font-semibold">Invoice Details</h4>
+                                        <p>Date: {formatDate(selectedInvoice.createdAt)}</p>
+                                        <p>Total: {formatCurrency(selectedInvoice.total)}</p>
+                                        {selectedInvoice.platform && <p>Platform: {selectedInvoice.platform}</p>}
+                                        <p>Payment To: {selectedInvoice.paymentReceivedBy || 'N/A'}</p>
+                                      </div>
+                                    </div>
+                                    
+                                    {selectedInvoice.items && selectedInvoice.items.length > 0 && (
+                                      <div>
+                                        <h4 className="font-semibold mb-2">Items</h4>
+                                        <div className="border rounded-lg overflow-hidden">
+                                          <Table>
+                                            <TableHeader>
+                                              <TableRow>
+                                                <TableHead>Description</TableHead>
+                                                <TableHead>Quantity</TableHead>
+                                                <TableHead>Unit Price</TableHead>
+                                                <TableHead>Total</TableHead>
+                                              </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                              {selectedInvoice.items.map((item: any, index: number) => (
+                                                <TableRow key={index}>
+                                                  <TableCell>{item.name || item.description}</TableCell>
+                                                  <TableCell>{item.quantity || 1}</TableCell>
+                                                  <TableCell>{formatCurrency(item.unitPrice || 0)}</TableCell>
+                                                  <TableCell>{formatCurrency(item.total || 0)}</TableCell>
+                                                </TableRow>
+                                              ))}
+                                            </TableBody>
+                                          </Table>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </DialogContent>
+                            </Dialog>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownloadPDF(invoice)}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete invoice #{invoice.invoiceNumber}? 
+                                    This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteInvoice(invoice.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                    disabled={deleteMutation.isPending}
+                                  >
+                                    {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Page {currentPage} of {totalPages}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
