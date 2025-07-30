@@ -1,16 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Rocket, Play, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLocation } from "wouter";
 
 export default function CTASection() {
+  const [, setLocation] = useLocation();
+
   const handleSignup = () => {
-    // TODO: Implement signup functionality
-    console.log("Get Started clicked");
+    setLocation("/auth/signup");
   };
 
   const handleDemo = () => {
-    // TODO: Implement demo functionality
-    console.log("Watch Demo clicked");
+    // For now, scroll to features section or redirect to login
+    setLocation("/auth/login");
   };
 
   const features = [
