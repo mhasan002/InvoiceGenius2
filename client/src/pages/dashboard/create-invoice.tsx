@@ -562,7 +562,7 @@ export default function CreateInvoice() {
                                     )}
                                   </div>
                                 )}
-                                {field.id === 'quantity' && item.quantity}
+                                {field.id === 'quantity' && (item.quantity || 1)}
                                 {field.id === 'unitPrice' && `$${item.unitPrice.toFixed(2)}`}
                                 {field.id === 'amount' && `$${(item.unitPrice * item.quantity).toFixed(2)}`}
                                 {field.id === 'total' && `$${item.total.toFixed(2)}`}
@@ -614,7 +614,7 @@ export default function CreateInvoice() {
                           <h4 className="font-semibold mb-3" style={{ color: defaultTemplate?.primaryColor }}>PAYMENT INFORMATION</h4>
                           <div className="grid grid-cols-2 gap-6 text-sm">
                             <div>
-                              <p><strong>Payment Method:</strong> {selectedPayment.type}</p>
+                              <p><strong>Payment Method:</strong> {selectedPayment.name || selectedPayment.type}</p>
                               {selectedPayment.fields && Object.entries(selectedPayment.fields).map(([key, value]) => (
                                 <p key={key}><strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong> {String(value)}</p>
                               ))}
@@ -745,7 +745,7 @@ export default function CreateInvoice() {
                                 )}
                               </div>
                             )}
-                            {field.id === 'quantity' && item.quantity}
+                            {field.id === 'quantity' && (item.quantity || 1)}
                             {field.id === 'unitPrice' && `$${item.unitPrice.toFixed(2)}`}
                             {field.id === 'amount' && `$${(item.unitPrice * item.quantity).toFixed(2)}`}
                             {field.id === 'total' && `$${item.total.toFixed(2)}`}
@@ -797,7 +797,7 @@ export default function CreateInvoice() {
                       <h4 className="font-semibold mb-3" style={{ color: defaultTemplate?.primaryColor }}>PAYMENT INFORMATION</h4>
                       <div className="grid grid-cols-2 gap-6 text-sm">
                         <div>
-                          <p><strong>Payment Method:</strong> {selectedPayment.type}</p>
+                          <p><strong>Payment Method:</strong> {selectedPayment.name || selectedPayment.type}</p>
                           {selectedPayment.fields && Object.entries(selectedPayment.fields).map(([key, value]) => (
                             <p key={key}><strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong> {String(value)}</p>
                           ))}
