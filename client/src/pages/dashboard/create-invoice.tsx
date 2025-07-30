@@ -428,16 +428,14 @@ export default function CreateInvoice() {
                 // Minimalist Red Template with exact geometric design
                 <div data-invoice-preview className="bg-white shadow-lg rounded-lg max-w-4xl mx-auto relative overflow-hidden" 
                      style={{ color: defaultTemplate?.textColor || '#000', fontFamily: defaultTemplate?.fontFamily || 'inherit' }}>
-                  {/* New Geometric Header Design with Diagonal Layers */}
-                  <div className="relative h-36 w-full bg-white overflow-hidden">
-                    {/* Diagonal Layer 1 */}
-                    <div className="absolute top-0 left-0 w-80 h-48 bg-[#660033] transform -skew-x-12"></div>
-                    
-                    {/* Diagonal Layer 2 */}
-                    <div className="absolute top-0 left-20 w-72 h-48 bg-[#99004d] transform -skew-x-12"></div>
-                    
-                    {/* Diagonal Layer 3 (smaller accent) */}
-                    <div className="absolute top-0 left-40 w-40 h-40 bg-[#cc0066] transform -skew-x-12 opacity-90"></div>
+                  {/* Geometric Header Design - Clean and Bold like Borcelle */}
+                  <div className="relative h-24 w-full bg-white overflow-hidden">
+                    {/* Main diagonal shape - Large and prominent */}
+                    <div className="absolute top-0 left-0 w-full h-24" style={{ backgroundColor: defaultTemplate?.primaryColor || '#991b1b' }}>
+                      <svg viewBox="0 0 400 100" className="w-full h-full">
+                        <polygon points="0,0 400,0 320,100 0,100" fill="currentColor" />
+                      </svg>
+                    </div>
                   </div>
                   <div className="p-8 pt-4 relative z-10 bg-white">
                       {/* Logo and Company */}

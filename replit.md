@@ -29,6 +29,10 @@ Navigation Issue Fix: User reported Payment Methods page losing left navigation 
 - Fixed template edit errors by adding null safety checks to prevent "Cannot read properties of undefined" crashes
 - Enhanced geometric header design with more prominent diagonal cuts
 - Removed bottom footer geometric elements as requested by user
+- Updated red template header design to match user's Borcelle-style geometric design with clean diagonal cut
+- Fixed template saving functionality to properly persist all settings and toggle states
+- Fixed toggle button synchronization between templates page and invoice preview/PDF generation
+- Resolved template configuration loading issues ensuring all saved settings are properly applied
 
 ### Previous Migration to Replit Environment Completed (July 29, 2025)
 - Successfully migrated project from Replit Agent to standard Replit environment

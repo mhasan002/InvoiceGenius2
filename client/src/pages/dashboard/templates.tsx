@@ -158,10 +158,22 @@ export default function Templates() {
     );
     
     if (existingTemplate) {
-      // Use the existing saved template
-      const existingConfig = existingTemplate.config as TemplateConfig;
-      setSelectedTemplate({ ...existingConfig, id: existingTemplate.id });
-      setEditingTemplate({ ...existingTemplate, id: existingTemplate.id });
+      // Use the existing saved template with proper config merging
+      const defaultTemplate = defaultTemplates.find(t => t.name === template.name) || defaultTemplates[0];
+      const dbConfig = existingTemplate.config as any;
+      const mergedConfig = { 
+        ...defaultTemplate, 
+        ...dbConfig,
+        // Explicitly preserve boolean values from database
+        showTerms: dbConfig?.showTerms !== undefined ? Boolean(dbConfig.showTerms) : defaultTemplate.showTerms,
+        showNotes: dbConfig?.showNotes !== undefined ? Boolean(dbConfig.showNotes) : defaultTemplate.showNotes,
+        logoVisible: dbConfig?.logoVisible !== undefined ? Boolean(dbConfig.logoVisible) : defaultTemplate.logoVisible,
+        showPayment: dbConfig?.showPayment !== undefined ? Boolean(dbConfig.showPayment) : defaultTemplate.showPayment,
+        id: existingTemplate.id // Use the database template ID
+      } as TemplateConfig;
+      
+      setSelectedTemplate(mergedConfig);
+      setEditingTemplate(mergedConfig);
     } else {
       // Create new template only if no existing one found
       const clonedTemplate = { 
@@ -169,7 +181,8 @@ export default function Templates() {
         id: `${template.id}_${Date.now()}`,
         showTerms: template.showTerms ?? true,
         showNotes: template.showNotes ?? true,
-        logoVisible: template.logoVisible ?? true
+        logoVisible: template.logoVisible ?? true,
+        showPayment: template.showPayment ?? true
       };
       setSelectedTemplate(clonedTemplate);
       setEditingTemplate(clonedTemplate);
@@ -468,16 +481,14 @@ export default function Templates() {
 
   const MinimalistPreview = ({ template }: { template: TemplateConfig }) => (
     <div className="bg-white shadow-lg rounded-lg max-w-2xl mx-auto relative overflow-hidden" style={{ color: template.textColor, fontFamily: template.fontFamily }}>
-      {/* New Geometric Header Design with Diagonal Layers */}
-      <div className="relative h-36 w-full bg-white overflow-hidden">
-        {/* Diagonal Layer 1 */}
-        <div className="absolute top-0 left-0 w-80 h-48 bg-[#660033] transform -skew-x-12"></div>
-        
-        {/* Diagonal Layer 2 */}
-        <div className="absolute top-0 left-20 w-72 h-48 bg-[#99004d] transform -skew-x-12"></div>
-        
-        {/* Diagonal Layer 3 (smaller accent) */}
-        <div className="absolute top-0 left-40 w-40 h-40 bg-[#cc0066] transform -skew-x-12 opacity-90"></div>
+      {/* Geometric Header Design - Clean and Bold like Borcelle */}
+      <div className="relative h-24 w-full bg-white overflow-hidden">
+        {/* Main diagonal shape - Large and prominent */}
+        <div className="absolute top-0 left-0 w-full h-24" style={{ backgroundColor: template.primaryColor || '#991b1b' }}>
+          <svg viewBox="0 0 400 100" className="w-full h-full">
+            <polygon points="0,0 400,0 320,100 0,100" fill="currentColor" />
+          </svg>
+        </div>
       </div>
       
       <div className="p-8 pt-4 relative z-10 bg-white">
