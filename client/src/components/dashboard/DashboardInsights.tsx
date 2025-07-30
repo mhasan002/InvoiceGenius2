@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { 
   DollarSign, 
   FileText, 
@@ -21,6 +22,7 @@ import {
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export function DashboardInsights() {
+  const [, setLocation] = useLocation();
   const [startDate, setStartDate] = useState(() => {
     const date = new Date();
     date.setDate(date.getDate() - 30);
@@ -47,43 +49,68 @@ export function DashboardInsights() {
     });
   }, [invoices, startDate, endDate]);
 
-  // Calculate statistics
-  const stats = useMemo(() => [
-    {
-      title: 'Total Invoices',
-      value: filteredInvoices.length.toString(),
-      change: `${filteredInvoices.length > 0 ? '+' : ''}${filteredInvoices.length}`,
-      changeType: 'positive' as const,
-      icon: FileText,
-      description: `In selected date range`
-    },
-    {
-      title: 'Total Invoice Worth',
-      value: `$${filteredInvoices.reduce((sum, inv) => sum + parseFloat(inv.amount || '0'), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      change: '+12.5%',
-      changeType: 'positive' as const,
-      icon: DollarSign,
-      description: 'Total value of selected invoices'
-    },
-    {
-      title: 'Average Invoice Value',
-      value: filteredInvoices.length > 0 
-        ? `$${(filteredInvoices.reduce((sum, inv) => sum + parseFloat(inv.amount || '0'), 0) / filteredInvoices.length).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-        : '$0.00',
-      change: '+5.2%',
-      changeType: 'positive' as const,
-      icon: BarChart3,
-      description: 'Average invoice amount'
-    },
-    {
-      title: 'Pending Payments',
-      value: `$${filteredInvoices.filter(inv => inv.status === 'pending').reduce((sum, inv) => sum + parseFloat(inv.amount || '0'), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      change: '-2.1%',
-      changeType: 'negative' as const,
-      icon: Clock,
-      description: 'Outstanding payments'
-    }
-  ], [filteredInvoices]);
+  // Calculate statistics with proper total amount calculation
+  const stats = useMemo(() => {
+    const totalInvoiceWorth = filteredInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || '0'), 0);
+    const averageInvoiceValue = filteredInvoices.length > 0 ? totalInvoiceWorth / filteredInvoices.length : 0;
+    const pendingPayments = filteredInvoices.filter(inv => inv.status === 'pending').reduce((sum, inv) => sum + parseFloat(inv.total || '0'), 0);
+    
+    // Calculate percentage changes based on previous period data
+    const previousPeriodStart = new Date(startDate);
+    const periodLength = new Date(endDate).getTime() - new Date(startDate).getTime();
+    previousPeriodStart.setTime(previousPeriodStart.getTime() - periodLength);
+    
+    const previousInvoices = invoices.filter(invoice => {
+      const invoiceDate = new Date(invoice.createdAt);
+      return invoiceDate >= previousPeriodStart && invoiceDate < new Date(startDate);
+    });
+    
+    const previousTotalWorth = previousInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || '0'), 0);
+    const previousCount = previousInvoices.length;
+    const previousAverage = previousCount > 0 ? previousTotalWorth / previousCount : 0;
+    const previousPending = previousInvoices.filter(inv => inv.status === 'pending').reduce((sum, inv) => sum + parseFloat(inv.total || '0'), 0);
+    
+    const calculateChange = (current: number, previous: number) => {
+      if (previous === 0) return current > 0 ? '+100%' : '0%';
+      const change = ((current - previous) / previous) * 100;
+      return `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
+    };
+    
+    return [
+      {
+        title: 'Total Invoices',
+        value: filteredInvoices.length.toString(),
+        change: calculateChange(filteredInvoices.length, previousCount),
+        changeType: filteredInvoices.length >= previousCount ? 'positive' as const : 'negative' as const,
+        icon: FileText,
+        description: 'In selected date range'
+      },
+      {
+        title: 'Total Invoice Worth',
+        value: `$${totalInvoiceWorth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        change: calculateChange(totalInvoiceWorth, previousTotalWorth),
+        changeType: totalInvoiceWorth >= previousTotalWorth ? 'positive' as const : 'negative' as const,
+        icon: DollarSign,
+        description: 'Total value of selected invoices'
+      },
+      {
+        title: 'Average Invoice Value',
+        value: `$${averageInvoiceValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        change: calculateChange(averageInvoiceValue, previousAverage),
+        changeType: averageInvoiceValue >= previousAverage ? 'positive' as const : 'negative' as const,
+        icon: BarChart3,
+        description: 'Average invoice amount'
+      },
+      {
+        title: 'Pending Payments',
+        value: `$${pendingPayments.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        change: calculateChange(pendingPayments, previousPending),
+        changeType: pendingPayments <= previousPending ? 'positive' as const : 'negative' as const,
+        icon: Clock,
+        description: 'Outstanding payments'
+      }
+    ];
+  }, [filteredInvoices, invoices, startDate, endDate]);
 
   // Generate chart data
   const chartData = useMemo(() => {
@@ -98,7 +125,7 @@ export function DashboardInsights() {
       if (!dailyData[date]) {
         dailyData[date] = 0;
       }
-      dailyData[date] += parseFloat(invoice.amount || '0');
+      dailyData[date] += parseFloat(invoice.total || '0');
     });
 
     return Object.entries(dailyData).map(([date, amount]) => ({
@@ -175,6 +202,64 @@ export function DashboardInsights() {
   };
 
   const lastUpdated = new Date().toLocaleString();
+
+  // Export reports functionality
+  const handleExportReports = () => {
+    const reportData = {
+      dateRange: {
+        start: startDate,
+        end: endDate
+      },
+      summary: {
+        totalInvoices: filteredInvoices.length,
+        totalWorth: filteredInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || '0'), 0),
+        averageValue: filteredInvoices.length > 0 
+          ? filteredInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || '0'), 0) / filteredInvoices.length 
+          : 0,
+        pendingPayments: filteredInvoices.filter(inv => inv.status === 'pending').reduce((sum, inv) => sum + parseFloat(inv.total || '0'), 0)
+      },
+      invoices: filteredInvoices.map(invoice => ({
+        invoiceNumber: invoice.invoiceNumber,
+        clientName: invoice.clientName,
+        amount: parseFloat(invoice.total || '0'),
+        status: invoice.status,
+        date: new Date(invoice.createdAt).toLocaleDateString(),
+        createdAt: invoice.createdAt
+      }))
+    };
+
+    const csvContent = [
+      // Header
+      ['Date Range', `${startDate} to ${endDate}`],
+      ['Export Date', new Date().toLocaleDateString()],
+      [''],
+      ['Summary'],
+      ['Total Invoices', reportData.summary.totalInvoices],
+      ['Total Invoice Worth', `$${reportData.summary.totalWorth.toFixed(2)}`],
+      ['Average Invoice Value', `$${reportData.summary.averageValue.toFixed(2)}`],
+      ['Pending Payments', `$${reportData.summary.pendingPayments.toFixed(2)}`],
+      [''],
+      ['Invoice Details'],
+      ['Invoice Number', 'Client Name', 'Amount', 'Status', 'Date'],
+      ...reportData.invoices.map(inv => [
+        inv.invoiceNumber,
+        inv.clientName,
+        `$${inv.amount.toFixed(2)}`,
+        inv.status,
+        inv.date
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `invoice-report-${startDate}-to-${endDate}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (isLoading) {
     return (
@@ -336,15 +421,29 @@ export function DashboardInsights() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
-            <Button className="h-20 flex-col space-y-2" size="lg">
+            <Button 
+              className="h-20 flex-col space-y-2" 
+              size="lg"
+              onClick={() => setLocation('/dashboard/create-invoice')}
+            >
               <Plus className="h-6 w-6" />
               <span>Create Invoice</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col space-y-2" size="lg">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col space-y-2" 
+              size="lg"
+              onClick={() => setLocation('/dashboard/invoices')}
+            >
               <FileText className="h-6 w-6" />
               <span>View All Invoices</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col space-y-2" size="lg">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col space-y-2" 
+              size="lg"
+              onClick={handleExportReports}
+            >
               <Download className="h-6 w-6" />
               <span>Export Reports</span>
             </Button>
@@ -356,7 +455,11 @@ export function DashboardInsights() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold">Recent Invoices Snapshot</CardTitle>
-          <Button variant="ghost" size="sm">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setLocation('/dashboard/invoices')}
+          >
             <Eye className="h-4 w-4 mr-2" />
             View All
           </Button>
@@ -403,7 +506,7 @@ export function DashboardInsights() {
                         {new Date(invoice.createdAt).toLocaleDateString()}
                       </td>
                       <td className="py-3 px-2 text-sm font-medium text-gray-900 dark:text-white">
-                        ${parseFloat(invoice.amount || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        ${parseFloat(invoice.total || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </td>
                       <td className="py-3 px-2 text-sm">
                         <Badge className={getStatusColor(invoice.status || 'draft')}>
