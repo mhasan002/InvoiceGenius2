@@ -313,13 +313,21 @@ export default function CreateInvoice() {
   // Save invoice mutation
   const createInvoiceMutation = useMutation({
     mutationFn: (invoiceData: any) => apiRequest('POST', '/api/invoices', invoiceData),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
-      toast({ title: "Invoice created successfully!" });
-      resetForm();
+      toast({ 
+        title: "Invoice created successfully!", 
+        description: "You can now download the PDF or create a new invoice."
+      });
+      // Don't reset form immediately - let user download PDF first
+      // resetForm();
     },
-    onError: () => {
-      toast({ title: "Failed to create invoice", variant: "destructive" });
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to create invoice", 
+        description: error?.message || "Please try again",
+        variant: "destructive" 
+      });
     }
   });
 
@@ -362,6 +370,40 @@ export default function CreateInvoice() {
     if (!clientName || items.length === 0) {
       toast({ title: "Please fill in client name and add at least one item before generating PDF", variant: "destructive" });
       return;
+    }
+
+    // Save the invoice first if not already saved
+    if (!createInvoiceMutation.isSuccess) {
+      const invoiceData = {
+        invoiceNumber,
+        clientName,
+        clientPhone,
+        clientAddress,
+        clientEmail,
+        clientCustomFields,
+        items,
+        taxPercentage,
+        discountType,
+        discountValue,
+        platform,
+        companyProfileId: selectedCompanyProfile || null,
+        paymentMethodId: selectedPaymentMethod || null,
+        paymentReceivedBy,
+        notes: showNotes ? notes : null,
+        terms: showTerms ? terms : null,
+        subtotal,
+        taxAmount,
+        discountAmount,
+        total,
+        status: 'draft'
+      };
+
+      try {
+        await createInvoiceMutation.mutateAsync(invoiceData);
+      } catch (error) {
+        toast({ title: "Failed to save invoice before generating PDF", variant: "destructive" });
+        return;
+      }
     }
 
     try {
@@ -1263,10 +1305,25 @@ export default function CreateInvoice() {
                 <Eye className="h-4 w-4 mr-2" />
                 Preview Invoice
               </Button>
-              <Button variant="outline" className="w-full" onClick={handleDownloadPDF}>
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                onClick={handleDownloadPDF}
+                disabled={createInvoiceMutation.isPending}
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Download PDF
               </Button>
+              {createInvoiceMutation.isSuccess && (
+                <Button 
+                  variant="secondary" 
+                  className="w-full" 
+                  onClick={resetForm}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Invoice
+                </Button>
+              )}
             </div>
           </div>
         </div>

@@ -92,9 +92,16 @@ export default function InvoicesPage() {
     }
   };
 
-  // Fetch invoices
+  // Fetch invoices with dependency tracking
   const { data: invoices = [], isLoading, error } = useQuery({
-    queryKey: ['/api/invoices'],
+    queryKey: ['/api/invoices', dateRange, customStartDate, customEndDate, searchQuery],
+    queryFn: async () => {
+      const response = await fetch('/api/invoices', { credentials: 'include' });
+      if (!response.ok) {
+        throw new Error('Failed to fetch invoices');
+      }
+      return response.json();
+    },
     select: (data: Invoice[]) => {
       const { start, end } = getDateRange();
       
@@ -102,8 +109,8 @@ export default function InvoicesPage() {
         .filter(invoice => {
           // Date filtering
           const invoiceDate = new Date(invoice.createdAt);
-          const startDate = new Date(start);
-          const endDate = new Date(end);
+          const startDate = new Date(start + 'T00:00:00');
+          const endDate = new Date(end + 'T23:59:59');
           const isInDateRange = invoiceDate >= startDate && invoiceDate <= endDate;
           
           // Search filtering
@@ -129,9 +136,16 @@ export default function InvoicesPage() {
 
   // Delete invoice mutation
   const deleteMutation = useMutation({
-    mutationFn: (invoiceId: string) => apiRequest(`/api/invoices/${invoiceId}`, {
-      method: 'DELETE'
-    }),
+    mutationFn: async (invoiceId: string) => {
+      const response = await fetch(`/api/invoices/${invoiceId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete invoice');
+      }
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
       toast({
