@@ -428,12 +428,20 @@ export default function CreateInvoice() {
                 // Minimalist Red Template with exact geometric design
                 <div data-invoice-preview className="bg-white shadow-lg rounded-lg max-w-4xl mx-auto relative overflow-hidden" 
                      style={{ color: defaultTemplate?.textColor || '#000', fontFamily: defaultTemplate?.fontFamily || 'inherit' }}>
-                  {/* Geometric Header - Straight Red Design */}
+                  {/* Geometric Header with diagonal design */}
                   <div className="relative">
                     <div 
                       className="w-full h-16"
                       style={{ 
                         backgroundColor: defaultTemplate?.primaryColor || '#991b1b'
+                      }}
+                    ></div>
+                    {/* Geometric diagonal cut */}
+                    <div 
+                      className="absolute top-0 right-0 w-24 h-16"
+                      style={{ 
+                        backgroundColor: defaultTemplate?.primaryColor || '#991b1b',
+                        clipPath: 'polygon(20% 0%, 100% 0%, 100% 100%, 0% 100%)'
                       }}
                     ></div>
                     <div className="p-8 pt-8 relative z-10">
@@ -614,7 +622,21 @@ export default function CreateInvoice() {
                     </div>
                   </div>
                   
-                  {/* Remove bottom geometric design as requested - keep only clean design like template preview */}
+                  {/* Geometric Footer */}
+                  <div className="relative mt-8">
+                    <div 
+                      className="w-full h-4"
+                      style={{ backgroundColor: defaultTemplate?.primaryColor || '#991b1b' }}
+                    ></div>
+                    {/* Geometric diagonal cut for footer */}
+                    <div 
+                      className="absolute bottom-0 left-0 w-16 h-4"
+                      style={{ 
+                        backgroundColor: defaultTemplate?.primaryColor || '#991b1b',
+                        clipPath: 'polygon(0% 0%, 80% 0%, 100% 100%, 0% 100%)'
+                      }}
+                    ></div>
+                  </div>
                 </div>
               ) : (
                 // Professional Template (default)

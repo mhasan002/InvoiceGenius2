@@ -152,16 +152,16 @@ export default function Templates() {
   });
 
   const handleSelectTemplate = (template: TemplateConfig) => {
-    // Check if there's already a saved version of this template
+    // For built-in templates, check if there's already a saved version
     const existingTemplate = templates.find((t: Template) => 
-      t.name === template.name && t.config && (t.config as any).id?.startsWith(template.id)
+      t.name === template.name
     );
     
     if (existingTemplate) {
-      // Use the existing saved template instead of creating a new one
+      // Use the existing saved template
       const existingConfig = existingTemplate.config as TemplateConfig;
       setSelectedTemplate({ ...existingConfig, id: existingTemplate.id });
-      setEditingTemplate({ ...existingConfig, id: existingTemplate.id });
+      setEditingTemplate({ ...existingTemplate, id: existingTemplate.id });
     } else {
       // Create new template only if no existing one found
       const clonedTemplate = { 
@@ -226,20 +226,20 @@ export default function Templates() {
       config: editingTemplate
     };
 
-    // Check if there's already a saved template with this name
+    // Check if this is an existing saved template (not a built-in one)
     const existingTemplate = templates.find((t: Template) => 
-      t.name === editingTemplate.name && t.config && (t.config as any).id?.startsWith(editingTemplate.id.split('_')[0])
+      t.name === editingTemplate.name
     );
 
-    if (existingTemplate) {
-      // Update existing template instead of creating new one
-      updateMutation.mutate({ id: existingTemplate.id, ...templateData });
-    } else if (editingTemplate.id.includes('_')) {
-      // New template (has timestamp suffix)
-      createMutation.mutate(templateData);
-    } else {
-      // Existing template
+    if (existingTemplate && !editingTemplate.id.includes('_')) {
+      // This is an existing saved template being edited
       updateMutation.mutate({ id: editingTemplate.id, ...templateData });
+    } else if (existingTemplate && editingTemplate.id.includes('_')) {
+      // This is a built-in template with changes, update the existing saved version
+      updateMutation.mutate({ id: existingTemplate.id, ...templateData });
+    } else {
+      // This is a new template
+      createMutation.mutate(templateData);
     }
   };
 
@@ -248,11 +248,14 @@ export default function Templates() {
     
     // Check if there's already a saved template with this name
     const existingTemplate = templates.find((t: Template) => 
-      t.name === editingTemplate.name && t.config && (t.config as any).id?.startsWith(editingTemplate.id.split('_')[0])
+      t.name === editingTemplate.name
     );
 
-    if (existingTemplate) {
-      // Update existing template and set as default
+    if (existingTemplate && !editingTemplate.id.includes('_')) {
+      // This is an existing saved template, just set as default
+      setDefaultMutation.mutate(editingTemplate.id);
+    } else if (existingTemplate && editingTemplate.id.includes('_')) {
+      // This is a built-in template with changes, update existing saved version and set as default
       const templateData = {
         name: editingTemplate.name,
         description: editingTemplate.description,
@@ -273,7 +276,7 @@ export default function Templates() {
       } catch (error) {
         toast({ title: "Failed to update and use template", variant: "destructive" });
       }
-    } else if (editingTemplate.id.includes('_')) {
+    } else {
       // For new templates, save first then set as default
       const templateData = {
         name: editingTemplate.name,
@@ -296,9 +299,6 @@ export default function Templates() {
       } catch (error) {
         toast({ title: "Failed to save and use template", variant: "destructive" });
       }
-    } else {
-      // For existing saved templates, just set as default
-      setDefaultMutation.mutate(editingTemplate.id);
     }
   };
 
@@ -468,6 +468,14 @@ export default function Templates() {
         <div 
           className="w-full h-24"
           style={{ backgroundColor: template.primaryColor }}
+        ></div>
+        {/* Geometric diagonal cut */}
+        <div 
+          className="absolute top-0 right-0 w-32 h-24"
+          style={{ 
+            backgroundColor: template.primaryColor,
+            clipPath: 'polygon(20% 0%, 100% 0%, 100% 100%, 0% 100%)'
+          }}
         ></div>
         <div className="p-8 pt-8 relative z-10">
           {/* Logo and Company */}
