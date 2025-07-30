@@ -24,15 +24,17 @@ Navigation Issue Fix: User reported Payment Methods page losing left navigation 
 - Team page includes add/edit member forms, permissions management, and activity filtering
 - All team management features working correctly with Supabase database integration
 
-### Team Management Security Fixes Completed (July 30, 2025)
-- Fixed critical team member management security issues
-- Added proper permission checks to DELETE, PUT, and deactivate team member API routes
-- All team management operations now require canManageTeamMembers permission
-- Added client-side permission checks to hide management buttons from unauthorized users
-- Team members without proper permissions can no longer edit or delete other team members
-- Add Team Member section now only visible to users with management permissions
-- Resolved issue where team member "Shihab" couldn't be removed due to missing permission checks
-- Enhanced security ensures only admins and authorized team members can manage others
+### Team Management Soft Delete Implementation Completed (July 30, 2025)
+- Implemented comprehensive soft delete system for team members as requested by user
+- Team members are now deactivated instead of permanently deleted to preserve data integrity
+- Updated database schema with "onDelete: set null" for invoice foreign key relationships
+- Added reactivate functionality allowing admins to restore deactivated team member access
+- Team member data, invoice history, and audit trails are now fully preserved
+- UI shows visual indicators for active/inactive status with green/red badges
+- Active members show "Revoke Access" option, inactive members show "Activate" option
+- All historical data remains intact when team members are deactivated
+- Enhanced user experience with clear messaging about data preservation
+- Fixed database foreign key constraint issues that previously prevented team member removal
 
 ### Final Migration from Replit Agent to Standard Replit Environment Completed (July 30, 2025)
 - Successfully completed final migration from Replit Agent to standard Replit environment on July 30, 2025

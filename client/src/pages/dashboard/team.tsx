@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, Edit, Trash2, UserPlus, Filter, Calendar } from "lucide-react";
+import { Eye, Edit, Trash2, UserPlus, Filter, Calendar, UserCheck } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
@@ -180,8 +180,8 @@ export default function TeamPage() {
     },
   });
 
-  // Delete team member mutation
-  const deleteMemberMutation = useMutation({
+  // Deactivate team member mutation (soft delete)
+  const deactivateMemberMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await apiRequest("DELETE", `/api/team-members/${id}`);
       return res.json();
@@ -190,13 +190,35 @@ export default function TeamPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/team-members"] });
       toast({
         title: "Success",
-        description: "Team member removed successfully",
+        description: "Team member access revoked successfully",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Error", 
-        description: error.message || "Failed to remove team member",
+        description: error.message || "Failed to revoke team member access",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reactivate team member mutation
+  const reactivateMemberMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("POST", `/api/team-members/${id}/activate`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/team-members"] });
+      toast({
+        title: "Success",
+        description: "Team member access restored successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error", 
+        description: error.message || "Failed to restore team member access",
         variant: "destructive",
       });
     },
@@ -479,31 +501,42 @@ export default function TeamPage() {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="outline" size="sm">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to remove {member.fullName || member.email}? 
-                                      This will revoke their access but their invoice history will be preserved.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => deleteMemberMutation.mutate(member.id)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      Remove
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              {member.isActive === "true" ? (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Revoke Team Member Access</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to revoke access for {member.fullName || member.email}? 
+                                        They will no longer be able to log in, but their data and invoice history will be preserved.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => deactivateMemberMutation.mutate(member.id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Revoke Access
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => reactivateMemberMutation.mutate(member.id)}
+                                  className="text-green-600 border-green-600 hover:bg-green-50"
+                                >
+                                  <UserCheck className="h-4 w-4" />
+                                </Button>
+                              )}
                             </>
                           )}
                           {!hasPermission("canManageTeamMembers") && (

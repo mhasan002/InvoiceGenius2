@@ -296,6 +296,7 @@ export class DatabaseStorage implements IStorage {
 
   // Team Member operations
   async getTeamMembers(adminId: string): Promise<TeamMember[]> {
+    // Return all team members (both active and inactive) for admin management
     return await this.db.select().from(teamMembers).where(eq(teamMembers.adminId, adminId));
   }
 

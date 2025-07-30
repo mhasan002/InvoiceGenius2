@@ -1043,14 +1043,15 @@ export function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Team member not found" });
       }
 
-      const deleted = await storage.deleteTeamMember(req.params.id);
-      if (!deleted) {
+      // Use soft delete - deactivate instead of actually deleting
+      const deactivated = await storage.deactivateTeamMember(req.params.id);
+      if (!deactivated) {
         return res.status(404).json({ error: "Team member not found" });
       }
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting team member:", error);
-      res.status(500).json({ error: "Failed to delete team member" });
+      console.error("Error deactivating team member:", error);
+      res.status(500).json({ error: "Failed to deactivate team member" });
     }
   });
 
@@ -1069,6 +1070,25 @@ export function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deactivating team member:", error);
       res.status(500).json({ error: "Failed to deactivate team member" });
+    }
+  });
+
+  // Reactivate team member
+  app.post("/api/team-members/:id/activate", requireAuth, requirePermission("canManageTeamMembers"), async (req: any, res) => {
+    try {
+      const teamMember = await storage.getTeamMember(req.params.id);
+      if (!teamMember || teamMember.adminId !== req.session.userId) {
+        return res.status(404).json({ error: "Team member not found" });
+      }
+
+      const activated = await storage.updateTeamMember(req.params.id, { isActive: "true" });
+      if (!activated) {
+        return res.status(500).json({ error: "Failed to activate team member" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error activating team member:", error);
+      res.status(500).json({ error: "Failed to activate team member" });
     }
   });
 
