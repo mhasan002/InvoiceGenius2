@@ -184,7 +184,7 @@ export default function Templates() {
 
   const updateField = (fieldId: string, updates: Partial<TemplateField>) => {
     if (editingTemplate) {
-      const updatedFields = editingTemplate.fields.map(field =>
+      const updatedFields = (editingTemplate.fields || []).map(field =>
         field.id === fieldId ? { ...field, ...updates } : field
       );
       setEditingTemplate({ ...editingTemplate, fields: updatedFields });
@@ -196,21 +196,21 @@ export default function Templates() {
       const newField = { name: "Custom Field", value: "" };
       setEditingTemplate({
         ...editingTemplate,
-        customFields: [...editingTemplate.customFields, newField]
+        customFields: [...(editingTemplate.customFields || []), newField]
       });
     }
   };
 
   const removeCustomField = (index: number) => {
     if (editingTemplate) {
-      const updatedFields = editingTemplate.customFields.filter((_, i) => i !== index);
+      const updatedFields = (editingTemplate.customFields || []).filter((_, i) => i !== index);
       setEditingTemplate({ ...editingTemplate, customFields: updatedFields });
     }
   };
 
   const updateCustomField = (index: number, key: 'name' | 'value', value: string) => {
     if (editingTemplate) {
-      const updatedFields = editingTemplate.customFields.map((field, i) =>
+      const updatedFields = (editingTemplate.customFields || []).map((field, i) =>
         i === index ? { ...field, [key]: value } : field
       );
       setEditingTemplate({ ...editingTemplate, customFields: updatedFields });
@@ -358,13 +358,13 @@ export default function Templates() {
 
       {/* Items Table */}
       <div className="mb-8">
-        <div className={`grid gap-4 p-3 text-sm font-medium`} style={{ backgroundColor: '#f3f4f6', gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length + template.customFields.length}, 1fr)` }}>
-          {template.fields.filter(f => f.visible).map(field => (
+        <div className={`grid gap-4 p-3 text-sm font-medium`} style={{ backgroundColor: '#f3f4f6', gridTemplateColumns: `repeat(${(template.fields?.filter(f => f.visible) || []).length + (template.customFields?.length || 0)}, 1fr)` }}>
+          {template.fields?.filter(f => f.visible)?.map(field => (
             <div key={field.id} className="uppercase">
               {field.customLabel || field.label}
             </div>
           ))}
-          {template.customFields.map((customField, index) => (
+          {template.customFields?.map((customField, index) => (
             <div key={`custom-header-${index}`} className="uppercase">
               {customField.name}
             </div>
@@ -372,8 +372,8 @@ export default function Templates() {
         </div>
         
         {[1, 2, 3, 4].map((item) => (
-          <div key={item} className={`grid gap-4 p-3 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length + template.customFields.length}, 1fr)` }}>
-            {template.fields.filter(f => f.visible).map((field, index) => (
+          <div key={item} className={`grid gap-4 p-3 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${(template.fields?.filter(f => f.visible) || []).length + (template.customFields?.length || 0)}, 1fr)` }}>
+            {template.fields?.filter(f => f.visible)?.map((field, index) => (
               <div key={field.id}>
                 {field.id === 'description' && 'YOUR DESCRIPTION'}
                 {field.id === 'unitPrice' && '$ 25.00'}
@@ -381,7 +381,7 @@ export default function Templates() {
                 {field.id === 'total' && '$ 50.00'}
               </div>
             ))}
-            {template.customFields.map((customField, index) => (
+            {template.customFields?.map((customField, index) => (
               <div key={`custom-data-${index}`}>
                 {customField.value || '-'}
               </div>
@@ -1058,7 +1058,7 @@ export default function Templates() {
                 <ScrollArea className="h-[600px]">
                   <div className={previewMode ? "max-w-sm mx-auto" : ""}>
                     <div className="transform scale-75 origin-top">
-                      {editingTemplate && selectedTemplate.id.includes("professional") ? (
+                      {editingTemplate && (selectedTemplate.name === "Professional Grey" || selectedTemplate.id === "professional") ? (
                         <ProfessionalPreview template={editingTemplate} />
                       ) : editingTemplate ? (
                         <MinimalistPreview template={editingTemplate} />
