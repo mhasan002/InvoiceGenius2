@@ -1003,7 +1003,7 @@ export function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/team-members/:id", requireAuth, async (req: any, res) => {
+  app.put("/api/team-members/:id", requireAuth, requirePermission("canManageTeamMembers"), async (req: any, res) => {
     try {
       const teamMember = await storage.getTeamMember(req.params.id);
       if (!teamMember || teamMember.adminId !== req.session.userId) {
@@ -1036,7 +1036,7 @@ export function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/team-members/:id", requireAuth, async (req: any, res) => {
+  app.delete("/api/team-members/:id", requireAuth, requirePermission("canManageTeamMembers"), async (req: any, res) => {
     try {
       const teamMember = await storage.getTeamMember(req.params.id);
       if (!teamMember || teamMember.adminId !== req.session.userId) {
@@ -1054,7 +1054,7 @@ export function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/team-members/:id/deactivate", requireAuth, async (req: any, res) => {
+  app.post("/api/team-members/:id/deactivate", requireAuth, requirePermission("canManageTeamMembers"), async (req: any, res) => {
     try {
       const teamMember = await storage.getTeamMember(req.params.id);
       if (!teamMember || teamMember.adminId !== req.session.userId) {

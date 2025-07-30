@@ -24,6 +24,16 @@ Navigation Issue Fix: User reported Payment Methods page losing left navigation 
 - Team page includes add/edit member forms, permissions management, and activity filtering
 - All team management features working correctly with Supabase database integration
 
+### Team Management Security Fixes Completed (July 30, 2025)
+- Fixed critical team member management security issues
+- Added proper permission checks to DELETE, PUT, and deactivate team member API routes
+- All team management operations now require canManageTeamMembers permission
+- Added client-side permission checks to hide management buttons from unauthorized users
+- Team members without proper permissions can no longer edit or delete other team members
+- Add Team Member section now only visible to users with management permissions
+- Resolved issue where team member "Shihab" couldn't be removed due to missing permission checks
+- Enhanced security ensures only admins and authorized team members can manage others
+
 ### Final Migration from Replit Agent to Standard Replit Environment Completed (July 30, 2025)
 - Successfully completed final migration from Replit Agent to standard Replit environment on July 30, 2025
 - Connected to user's Supabase database with provided DATABASE_URL secret
