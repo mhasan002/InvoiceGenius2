@@ -11,6 +11,29 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const teamMembers = pgTable("team_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").references(() => users.id).notNull(), // Admin who created this team member
+  email: varchar("email", { length: 255 }).notNull(),
+  password: text("password").notNull(), // Hashed password for team member login
+  fullName: varchar("full_name", { length: 255 }),
+  role: varchar("role", { length: 100 }).default("Member"), // Optional role label like "Editor", "Manager"
+  
+  // Access permissions as individual boolean fields
+  canCreateInvoices: varchar("can_create_invoices", { length: 10 }).default("false"),
+  canDeleteInvoices: varchar("can_delete_invoices", { length: 10 }).default("false"),
+  canManageServices: varchar("can_manage_services", { length: 10 }).default("false"),
+  canManageCompanyProfiles: varchar("can_manage_company_profiles", { length: 10 }).default("false"),
+  canManagePaymentMethods: varchar("can_manage_payment_methods", { length: 10 }).default("false"),
+  canManageTemplates: varchar("can_manage_templates", { length: 10 }).default("false"),
+  canViewOnlyAssignedInvoices: varchar("can_view_only_assigned_invoices", { length: 10 }).default("false"),
+  canManageTeamMembers: varchar("can_manage_team_members", { length: 10 }).default("false"),
+  
+  isActive: varchar("is_active", { length: 10 }).default("true"), // Can be deactivated instead of deleted
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const templates = pgTable("templates", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -48,6 +71,7 @@ export const paymentMethods = pgTable("payment_methods", {
 export const invoices = pgTable("invoices", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id),
+  createdBy: varchar("created_by").references(() => teamMembers.id), // Track which team member created this invoice
   invoiceNumber: varchar("invoice_number", { length: 100 }).notNull().unique(),
   
   // Client details
@@ -205,6 +229,27 @@ export const insertTemplateSchema = createInsertSchema(templates).omit({
   updatedAt: true,
 });
 
+// Team member schemas
+export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({
+  id: true,
+  adminId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  // Transform boolean strings to actual booleans for validation
+  canCreateInvoices: z.boolean().transform(val => val ? "true" : "false").default(false),
+  canDeleteInvoices: z.boolean().transform(val => val ? "true" : "false").default(false),
+  canManageServices: z.boolean().transform(val => val ? "true" : "false").default(false),
+  canManageCompanyProfiles: z.boolean().transform(val => val ? "true" : "false").default(false),
+  canManagePaymentMethods: z.boolean().transform(val => val ? "true" : "false").default(false),
+  canManageTemplates: z.boolean().transform(val => val ? "true" : "false").default(false),
+  canViewOnlyAssignedInvoices: z.boolean().transform(val => val ? "true" : "false").default(false),
+  canManageTeamMembers: z.boolean().transform(val => val ? "true" : "false").default(false),
+  isActive: z.boolean().transform(val => val ? "true" : "false").default(true),
+});
+
+export const updateTeamMemberSchema = insertTeamMemberSchema.partial();
+
 // Type exports
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -229,3 +274,6 @@ export type InsertPaymentMethod = z.infer<typeof insertPaymentMethodSchema>;
 
 export type Template = typeof templates.$inferSelect;
 export type InsertTemplate = z.infer<typeof insertTemplateSchema>;
+
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;

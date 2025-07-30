@@ -1,0 +1,99 @@
+Team
+Purpose:
+This page enables the admin to assign team members, grant custom access permissions, and monitor individual invoice activity. Each team member is added by entering their email and password. Admin decides what permissions each member should have during assignment.
+
+Database: PostgreSQL via Supabase
+
+🖥️ UI Layout Design
+📌 1. Page Header
+Title: “Team Management”
+
+Subheading: “Add and manage users with custom permissions and invoice activity tracking.”
+
+➕ 2. Add Team Member Section
+👤 Input Fields:
+Email Address (input)
+
+Password (input, required – this will be used by the team member to log in)
+
+Full Name (optional)
+
+🛡️ Access Control Panel (Checkboxes or Toggles):
+Admin can choose what access this team member will have. Options include:
+
+Permission	Toggle/Checkbox
+✅ Can create invoices	⬜️ ON / OFF
+✅ Can delete invoices	⬜️ ON / OFF
+✅ Can manage services/packages	⬜️ ON / OFF
+✅ Can manage company profiles	⬜️ ON / OFF
+✅ Can manage payment methods	⬜️ ON / OFF
+✅ Can view and change templates	⬜️ ON / OFF
+✅ Can view only assigned invoices	⬜️ ON / OFF
+✅ Can manage other team members (Team Access)	⬜️ ON / OFF
+
+✅ Admin can toggle these individually per team member
+✅ Every selected permission is saved as part of the member's access config in Supabase
+
+🔘 Role Label (Optional dropdown):
+Admin can assign a label like “Editor”, “Manager”, “Viewer”, but this is optional — permissions are what actually define access
+
+➕ Button:
+“Add Team Member” → on submit, credentials and permissions are saved
+
+👥 3. Existing Team Members Table
+Displays a table showing all team members with their role, access summary, and activity:
+
+Name	Email	Role	Invoices Created	Joined On	Permissions	Actions
+Sarah Khan	sarah@email.com	Editor	34	2025-06-20	View 🔍	✏️ 🗑️
+
+✅ “View” button opens a modal with full list of permissions for that member
+✅ ✏️ “Edit” lets admin update permissions or reset password
+✅ 🗑️ “Remove” removes login access for that user
+
+📊 4. Invoice Activity Filter Section
+🔎 Filters:
+Filter by Member (dropdown)
+
+Filter by Date Range (Today, Week, Month, Custom)
+
+🧾 Results Table:
+Invoice No	Client	Platform	Created By	Date	Status
+INV-2025-01	John Smith	Upwork	Sarah Khan	2025-07-25	Active
+INV-2025-02	Design Co.	Fiverr	Sarah Khan	2025-07-21	Deleted
+
+✅ Even if invoices are deleted, “Created By” is still visible and accurate
+✅ Admin can trace every invoice back to the team member who made it
+
+🔗 Database: PostgreSQL via Supabase
+All team member details, credentials, and permissions must be synced to Supabase.
+
+team_members table
+
+Fields: email, password_hash, created_by (admin), access_flags (JSON or boolean columns), created_at
+
+invoices table
+
+Field: created_by (foreign key → team_members.user_id)
+
+Deletion does not affect original creator reference
+
+✅ Optional: team_permissions table if storing granular permissions separately
+
+🧠 Key Logic:
+Role names (Admin, Editor) are cosmetic; real access comes from selected permissions
+
+Each permission governs what part of the app that team member can access
+
+If “Can manage team” is OFF, that member cannot view or use the Team page
+
+Admin can edit permissions any time after creation
+
+Password and access stored securely (hashed password)
+
+📱 Responsive Design
+All inputs, tables, and modals adjust to mobile layout
+
+On small screens: permissions panel uses collapsible accordion
+
+Edit actions shown as icons with tooltips
+

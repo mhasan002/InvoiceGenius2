@@ -14,6 +14,7 @@ import Invoices from "@/pages/dashboard/invoices";
 import PaymentMethods from "@/pages/dashboard/payment-methods";
 import Templates from "@/pages/dashboard/templates";
 import CreateInvoice from "@/pages/dashboard/create-invoice";
+import Team from "@/pages/dashboard/team";
 import Login from "@/pages/auth/login";
 import SignUp from "@/pages/auth/signup";
 import ForgotPassword from "@/pages/auth/forgot-password";
@@ -62,6 +63,11 @@ function Router() {
       <Route path="/dashboard/create-invoice">
         <ProtectedRoute>
           <CreateInvoice />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/dashboard/team">
+        <ProtectedRoute>
+          <Team />
         </ProtectedRoute>
       </Route>
       <Route path="/auth/login" component={Login} />

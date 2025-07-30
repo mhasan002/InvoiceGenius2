@@ -12,12 +12,14 @@ import {
   type PaymentMethod,
   type InsertPaymentMethod,
   type Template,
-  type InsertTemplate
+  type InsertTemplate,
+  type TeamMember,
+  type InsertTeamMember
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { users, invoices, services, packages, companyProfiles, paymentMethods, templates } from "@shared/schema";
+import { users, invoices, services, packages, companyProfiles, paymentMethods, templates, teamMembers } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
@@ -73,6 +75,15 @@ export interface IStorage {
   updateTemplate(id: string, template: Partial<InsertTemplate>): Promise<Template | undefined>;
   deleteTemplate(id: string): Promise<boolean>;
   setDefaultTemplate(userId: string, templateId: string): Promise<boolean>;
+  
+  // Team Member operations
+  getTeamMembers(adminId: string): Promise<TeamMember[]>;
+  getTeamMember(id: string): Promise<TeamMember | undefined>;
+  getTeamMemberByEmail(email: string): Promise<TeamMember | undefined>;
+  createTeamMember(teamMember: InsertTeamMember & { adminId: string }): Promise<TeamMember>;
+  updateTeamMember(id: string, teamMember: Partial<InsertTeamMember>): Promise<TeamMember | undefined>;
+  deleteTeamMember(id: string): Promise<boolean>;
+  deactivateTeamMember(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -275,6 +286,46 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+
+  // Team Member operations
+  async getTeamMembers(adminId: string): Promise<TeamMember[]> {
+    return await this.db.select().from(teamMembers).where(eq(teamMembers.adminId, adminId));
+  }
+
+  async getTeamMember(id: string): Promise<TeamMember | undefined> {
+    const result = await this.db.select().from(teamMembers).where(eq(teamMembers.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getTeamMemberByEmail(email: string): Promise<TeamMember | undefined> {
+    const result = await this.db.select().from(teamMembers).where(eq(teamMembers.email, email)).limit(1);
+    return result[0];
+  }
+
+  async createTeamMember(teamMember: InsertTeamMember & { adminId: string }): Promise<TeamMember> {
+    const result = await this.db.insert(teamMembers).values(teamMember).returning();
+    return result[0];
+  }
+
+  async updateTeamMember(id: string, teamMember: Partial<InsertTeamMember>): Promise<TeamMember | undefined> {
+    const result = await this.db.update(teamMembers).set(teamMember).where(eq(teamMembers.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteTeamMember(id: string): Promise<boolean> {
+    const result = await this.db.delete(teamMembers).where(eq(teamMembers.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async deactivateTeamMember(id: string): Promise<boolean> {
+    try {
+      await this.db.update(teamMembers).set({ isActive: "false" }).where(eq(teamMembers.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deactivating team member:', error);
+      return false;
+    }
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -420,6 +471,15 @@ export class MemStorage implements IStorage {
   async updateTemplate(): Promise<Template | undefined> { return undefined; }
   async deleteTemplate(): Promise<boolean> { return false; }
   async setDefaultTemplate(): Promise<boolean> { return false; }
+
+  // Team member stub implementations
+  async getTeamMembers(): Promise<TeamMember[]> { return []; }
+  async getTeamMember(): Promise<TeamMember | undefined> { return undefined; }
+  async getTeamMemberByEmail(): Promise<TeamMember | undefined> { return undefined; }
+  async createTeamMember(): Promise<TeamMember> { throw new Error("Not implemented in MemStorage"); }
+  async updateTeamMember(): Promise<TeamMember | undefined> { return undefined; }
+  async deleteTeamMember(): Promise<boolean> { return false; }
+  async deactivateTeamMember(): Promise<boolean> { return false; }
 }
 
 // Use database storage if DATABASE_URL is configured, otherwise use memory storage

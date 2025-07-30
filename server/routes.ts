@@ -2,7 +2,7 @@ import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { z, ZodError } from "zod";
 import { storage } from "./storage";
-import { insertUserSchema, insertInvoiceSchema, signupUserSchema, loginUserSchema, resetPasswordSchema, insertServiceSchema, insertPackageSchema, insertCompanyProfileSchema, insertPaymentMethodSchema, insertTemplateSchema } from "@shared/schema";
+import { insertUserSchema, insertInvoiceSchema, signupUserSchema, loginUserSchema, resetPasswordSchema, insertServiceSchema, insertPackageSchema, insertCompanyProfileSchema, insertPaymentMethodSchema, insertTemplateSchema, insertTeamMemberSchema, updateTeamMemberSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import session from "express-session";
 
@@ -745,6 +745,130 @@ export function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error setting default template:", error);
       res.status(500).json({ error: "Failed to set default template" });
+    }
+  });
+
+  // Team Members API Routes
+  app.get("/api/team-members", requireAuth, async (req: any, res) => {
+    try {
+      const teamMembers = await storage.getTeamMembers(req.session.userId);
+      res.json(teamMembers);
+    } catch (error) {
+      console.error("Error fetching team members:", error);
+      res.status(500).json({ error: "Failed to fetch team members" });
+    }
+  });
+
+  app.post("/api/team-members", requireAuth, async (req: any, res) => {
+    try {
+      console.log('Received team member data:', req.body);
+      
+      // Hash the password before storing
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+      const teamMemberData = {
+        ...req.body,
+        password: hashedPassword
+      };
+      
+      const validatedData = insertTeamMemberSchema.parse(teamMemberData);
+      console.log('Validated team member data:', validatedData);
+      
+      const teamMember = await storage.createTeamMember({
+        ...validatedData,
+        adminId: req.session.userId
+      });
+      res.status(201).json(teamMember);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: "Invalid team member data", details: error.errors });
+      }
+      console.error("Error creating team member:", error);
+      res.status(500).json({ error: "Failed to create team member" });
+    }
+  });
+
+  app.get("/api/team-members/:id", requireAuth, async (req: any, res) => {
+    try {
+      const teamMember = await storage.getTeamMember(req.params.id);
+      if (!teamMember || teamMember.adminId !== req.session.userId) {
+        return res.status(404).json({ error: "Team member not found" });
+      }
+      
+      // Don't send password in response
+      const { password, ...teamMemberWithoutPassword } = teamMember;
+      res.json(teamMemberWithoutPassword);
+    } catch (error) {
+      console.error("Error fetching team member:", error);
+      res.status(500).json({ error: "Failed to fetch team member" });
+    }
+  });
+
+  app.put("/api/team-members/:id", requireAuth, async (req: any, res) => {
+    try {
+      const teamMember = await storage.getTeamMember(req.params.id);
+      if (!teamMember || teamMember.adminId !== req.session.userId) {
+        return res.status(404).json({ error: "Team member not found" });
+      }
+
+      let updateData = req.body;
+      
+      // If password is being updated, hash it
+      if (updateData.password) {
+        updateData.password = await bcrypt.hash(updateData.password, 10);
+      }
+
+      const validatedData = updateTeamMemberSchema.parse(updateData);
+      const updatedTeamMember = await storage.updateTeamMember(req.params.id, validatedData);
+      
+      if (!updatedTeamMember) {
+        return res.status(404).json({ error: "Team member not found" });
+      }
+      
+      // Don't send password in response
+      const { password, ...teamMemberWithoutPassword } = updatedTeamMember;
+      res.json(teamMemberWithoutPassword);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: "Invalid team member data", details: error.errors });
+      }
+      console.error("Error updating team member:", error);
+      res.status(500).json({ error: "Failed to update team member" });
+    }
+  });
+
+  app.delete("/api/team-members/:id", requireAuth, async (req: any, res) => {
+    try {
+      const teamMember = await storage.getTeamMember(req.params.id);
+      if (!teamMember || teamMember.adminId !== req.session.userId) {
+        return res.status(404).json({ error: "Team member not found" });
+      }
+
+      const deleted = await storage.deleteTeamMember(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Team member not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting team member:", error);
+      res.status(500).json({ error: "Failed to delete team member" });
+    }
+  });
+
+  app.post("/api/team-members/:id/deactivate", requireAuth, async (req: any, res) => {
+    try {
+      const teamMember = await storage.getTeamMember(req.params.id);
+      if (!teamMember || teamMember.adminId !== req.session.userId) {
+        return res.status(404).json({ error: "Team member not found" });
+      }
+
+      const success = await storage.deactivateTeamMember(req.params.id);
+      if (!success) {
+        return res.status(500).json({ error: "Failed to deactivate team member" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deactivating team member:", error);
+      res.status(500).json({ error: "Failed to deactivate team member" });
     }
   });
 
