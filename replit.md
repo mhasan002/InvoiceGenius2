@@ -13,7 +13,7 @@ Navigation Issue Fix: User reported Payment Methods page losing left navigation 
 
 ## Recent Changes
 
-### Migration from Replit Agent to Standard Replit Environment Completed (July 29, 2025)
+### Migration from Replit Agent to Standard Replit Environment Completed (July 30, 2025)
 - Successfully migrated InvoiceGen application from Replit Agent to standard Replit environment
 - Connected to user's Supabase database with provided DATABASE_URL connection string
 - Verified all database tables are present: users, invoices, services, packages, company_profiles, payment_methods, templates
@@ -24,6 +24,10 @@ Navigation Issue Fix: User reported Payment Methods page losing left navigation 
 - Fixed Minimalist Red template: company logo now displays properly (increased size from 8x8 to 12x12 pixels)
 - Removed duplicate "Thank you for your business!" and "Authorized Signed" text from footer
 - Corrected geometric footer design to match original template with proper angular cuts and white diagonal separation
+- Fixed company name visibility issue in invoice preview (changed text color from white to black)
+- Fixed table row colors in Minimalist Red template to show red alternating rows instead of gray
+- Fixed template duplication issue: now updates existing saved templates instead of creating multiple copies
+- Implemented proper template management to prevent interface clutter
 
 ### Previous Migration to Replit Environment Completed (July 29, 2025)
 - Successfully migrated project from Replit Agent to standard Replit environment

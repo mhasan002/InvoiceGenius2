@@ -451,11 +451,11 @@ export default function CreateInvoice() {
                             </div>
                           )}
                           <div>
-                            <h1 className="text-2xl font-bold text-white">
+                            <h1 className="text-2xl font-bold text-black">
                               {selectedCompany?.name || 'Your Company Name'}
                             </h1>
                             {selectedCompany?.tagline && (
-                              <p className="text-sm text-gray-200">
+                              <p className="text-sm text-gray-600">
                                 {selectedCompany.tagline}
                               </p>
                             )}
@@ -516,10 +516,11 @@ export default function CreateInvoice() {
                           ))}
                         </div>
                         
-                        {items.length > 0 ? items.map((item) => (
+                        {items.length > 0 ? items.map((item, idx) => (
                           <div key={item.id} className="grid gap-4 py-3 text-sm border-b" 
                                style={{ 
                                  borderColor: '#E5E7EB',
+                                 backgroundColor: idx % 2 === 1 ? '#fef2f2' : 'transparent',
                                  gridTemplateColumns: defaultTemplate?.customFields?.length > 0 ? `2fr 1fr 1fr 1fr 1fr` : `2fr 1fr 1fr 1fr`
                                }}>
                             <div>

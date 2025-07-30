@@ -152,16 +152,28 @@ export default function Templates() {
   });
 
   const handleSelectTemplate = (template: TemplateConfig) => {
-    // Ensure all boolean properties are properly maintained when cloning
-    const clonedTemplate = { 
-      ...template, 
-      id: `${template.id}_${Date.now()}`,
-      showTerms: template.showTerms ?? true, // Ensure showTerms is preserved
-      showNotes: template.showNotes ?? true, // Ensure showNotes is preserved
-      logoVisible: template.logoVisible ?? true // Ensure logoVisible is preserved
-    };
-    setSelectedTemplate(clonedTemplate);
-    setEditingTemplate(clonedTemplate);
+    // Check if there's already a saved version of this template
+    const existingTemplate = templates.find((t: Template) => 
+      t.name === template.name && t.config && (t.config as any).id?.startsWith(template.id)
+    );
+    
+    if (existingTemplate) {
+      // Use the existing saved template instead of creating a new one
+      const existingConfig = existingTemplate.config as TemplateConfig;
+      setSelectedTemplate({ ...existingConfig, id: existingTemplate.id });
+      setEditingTemplate({ ...existingConfig, id: existingTemplate.id });
+    } else {
+      // Create new template only if no existing one found
+      const clonedTemplate = { 
+        ...template, 
+        id: `${template.id}_${Date.now()}`,
+        showTerms: template.showTerms ?? true,
+        showNotes: template.showNotes ?? true,
+        logoVisible: template.logoVisible ?? true
+      };
+      setSelectedTemplate(clonedTemplate);
+      setEditingTemplate(clonedTemplate);
+    }
   };
 
   const updateTemplate = (updates: Partial<TemplateConfig>) => {
@@ -214,7 +226,15 @@ export default function Templates() {
       config: editingTemplate
     };
 
-    if (editingTemplate.id.includes('_')) {
+    // Check if there's already a saved template with this name
+    const existingTemplate = templates.find((t: Template) => 
+      t.name === editingTemplate.name && t.config && (t.config as any).id?.startsWith(editingTemplate.id.split('_')[0])
+    );
+
+    if (existingTemplate) {
+      // Update existing template instead of creating new one
+      updateMutation.mutate({ id: existingTemplate.id, ...templateData });
+    } else if (editingTemplate.id.includes('_')) {
       // New template (has timestamp suffix)
       createMutation.mutate(templateData);
     } else {
@@ -435,7 +455,7 @@ export default function Templates() {
                 </div>
               )}
               <div>
-                <h1 className="text-2xl font-bold">Your Company Name</h1>
+                <h1 className="text-2xl font-bold text-black">Your Company Name</h1>
                 <p className="text-sm text-gray-600">Company Tagline</p>
               </div>
             </div>
@@ -490,7 +510,11 @@ export default function Templates() {
               { desc: "Brand photography", price: 100, qty: 1 },
               { desc: "Brand guide", price: 100, qty: 1 },
             ].map((item, idx) => (
-              <div key={idx} className={`grid gap-4 py-2 text-sm border-b`} style={{ borderColor: template.borderColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length + template.customFields.length}, 1fr)` }}>
+              <div key={idx} className={`grid gap-4 py-2 text-sm border-b`} style={{ 
+                borderColor: template.borderColor, 
+                backgroundColor: idx % 2 === 1 ? '#fef2f2' : 'transparent',
+                gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length + template.customFields.length}, 1fr)` 
+              }}>
                 {template.fields.filter(f => f.visible).map((field, index) => (
                   <div key={field.id}>
                     {field.id === 'description' && item.desc}
