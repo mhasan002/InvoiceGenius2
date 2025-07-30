@@ -210,19 +210,8 @@ export default function TeamPage() {
       return;
     }
 
-    // Convert boolean permissions to string values for API
-    const memberData = {
-      ...newMember,
-      canCreateInvoices: newMember.canCreateInvoices.toString(),
-      canDeleteInvoices: newMember.canDeleteInvoices.toString(),
-      canManageServices: newMember.canManageServices.toString(),
-      canManageCompanyProfiles: newMember.canManageCompanyProfiles.toString(),
-      canManagePaymentMethods: newMember.canManagePaymentMethods.toString(),
-      canManageTemplates: newMember.canManageTemplates.toString(),
-      canViewOnlyAssignedInvoices: newMember.canViewOnlyAssignedInvoices.toString(),
-      canManageTeamMembers: newMember.canManageTeamMembers.toString(),
-    };
-    createMemberMutation.mutate(memberData);
+    // Send boolean values directly - the API schema will handle the transformation
+    createMemberMutation.mutate(newMember);
   };
 
   const handleEditMember = (member: TeamMember) => {
@@ -246,21 +235,10 @@ export default function TeamPage() {
   const handleSubmitEditMember = () => {
     if (!selectedMember) return;
 
-    // Convert boolean permissions to string values for API
-    const memberData = {
-      ...editMember,
-      canCreateInvoices: editMember.canCreateInvoices?.toString(),
-      canDeleteInvoices: editMember.canDeleteInvoices?.toString(),
-      canManageServices: editMember.canManageServices?.toString(),
-      canManageCompanyProfiles: editMember.canManageCompanyProfiles?.toString(),
-      canManagePaymentMethods: editMember.canManagePaymentMethods?.toString(),
-      canManageTemplates: editMember.canManageTemplates?.toString(),
-      canViewOnlyAssignedInvoices: editMember.canViewOnlyAssignedInvoices?.toString(),
-      canManageTeamMembers: editMember.canManageTeamMembers?.toString(),
-    };
+    // Send boolean values directly - the API schema will handle the transformation
     updateMemberMutation.mutate({
       id: selectedMember.id,
-      data: memberData
+      data: editMember
     });
   };
 
