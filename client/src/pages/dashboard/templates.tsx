@@ -246,9 +246,35 @@ export default function Templates() {
   const handleUseTemplate = async () => {
     if (!editingTemplate) return;
     
-    // Check if it's a new template (has timestamp suffix) or existing template
-    if (editingTemplate.id.includes('_')) {
-      // For new/modified templates, save first then set as default
+    // Check if there's already a saved template with this name
+    const existingTemplate = templates.find((t: Template) => 
+      t.name === editingTemplate.name && t.config && (t.config as any).id?.startsWith(editingTemplate.id.split('_')[0])
+    );
+
+    if (existingTemplate) {
+      // Update existing template and set as default
+      const templateData = {
+        name: editingTemplate.name,
+        description: editingTemplate.description,
+        config: editingTemplate
+      };
+      
+      try {
+        // Update the existing template
+        await apiRequest('PUT', `/api/templates/${existingTemplate.id}`, templateData);
+        
+        // Then set as default
+        await apiRequest('POST', `/api/templates/${existingTemplate.id}/set-default`, {});
+        
+        // Update queries and show success
+        queryClient.invalidateQueries({ queryKey: ['/api/templates'] });
+        toast({ title: "Template updated and set as default!" });
+        setSelectedTemplate(null);
+      } catch (error) {
+        toast({ title: "Failed to update and use template", variant: "destructive" });
+      }
+    } else if (editingTemplate.id.includes('_')) {
+      // For new templates, save first then set as default
       const templateData = {
         name: editingTemplate.name,
         description: editingTemplate.description,
@@ -440,10 +466,10 @@ export default function Templates() {
       {/* Geometric Header */}
       <div className="relative">
         <div 
-          className="absolute top-0 left-0 w-full h-24 clip-polygon"
+          className="w-full h-24"
           style={{ backgroundColor: template.primaryColor }}
         ></div>
-        <div className="p-8 pt-16 relative z-10">
+        <div className="p-8 pt-8 relative z-10">
           {/* Logo and Company */}
           <div className="mb-8">
             <div className="flex items-center mb-2">

@@ -428,16 +428,15 @@ export default function CreateInvoice() {
                 // Minimalist Red Template with exact geometric design
                 <div data-invoice-preview className="bg-white shadow-lg rounded-lg max-w-4xl mx-auto relative overflow-hidden" 
                      style={{ color: defaultTemplate?.textColor || '#000', fontFamily: defaultTemplate?.fontFamily || 'inherit' }}>
-                  {/* Geometric Header - Diagonal Red Design exactly like image */}
+                  {/* Geometric Header - Straight Red Design */}
                   <div className="relative">
                     <div 
-                      className="absolute top-0 left-0 w-full h-16"
+                      className="w-full h-16"
                       style={{ 
-                        backgroundColor: defaultTemplate?.primaryColor || '#991b1b',
-                        clipPath: 'polygon(0% 0%, 100% 0%, 85% 100%, 0% 100%)'
+                        backgroundColor: defaultTemplate?.primaryColor || '#991b1b'
                       }}
                     ></div>
-                    <div className="p-8 pt-12 relative z-10">
+                    <div className="p-8 pt-8 relative z-10">
                       {/* Logo and Company */}
                       <div className="mb-8">
                         <div className="flex items-center mb-2">
