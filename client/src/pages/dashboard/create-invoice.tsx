@@ -567,7 +567,9 @@ export default function CreateInvoice() {
                                     )}
                                   </div>
                                 )}
-                                {field.id === 'quantity' && String(item.quantity || 1)}
+                                {field.id === 'quantity' && (
+                                  <div className="text-center font-medium">{item.quantity || 1}</div>
+                                )}
                                 {field.id === 'unitPrice' && `$${item.unitPrice.toFixed(2)}`}
                                 {field.id === 'amount' && `$${(item.unitPrice * item.quantity).toFixed(2)}`}
                                 {field.id === 'total' && `$${item.total.toFixed(2)}`}
@@ -750,7 +752,9 @@ export default function CreateInvoice() {
                                 )}
                               </div>
                             )}
-                            {field.id === 'quantity' && String(item.quantity || 1)}
+                            {field.id === 'quantity' && (
+                              <div className="text-center font-medium">{item.quantity || 1}</div>
+                            )}
                             {field.id === 'unitPrice' && `$${item.unitPrice.toFixed(2)}`}
                             {field.id === 'amount' && `$${(item.unitPrice * item.quantity).toFixed(2)}`}
                             {field.id === 'total' && `$${item.total.toFixed(2)}`}
