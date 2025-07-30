@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +32,21 @@ interface TeamMember {
   canManageTeamMembers: string;
   isActive: string;
   createdAt: string;
+}
+
+interface EditMemberForm {
+  email?: string;
+  fullName?: string;
+  role?: string;
+  password?: string;
+  canCreateInvoices?: boolean;
+  canDeleteInvoices?: boolean;
+  canManageServices?: boolean;
+  canManageCompanyProfiles?: boolean;
+  canManagePaymentMethods?: boolean;
+  canManageTemplates?: boolean;
+  canViewOnlyAssignedInvoices?: boolean;
+  canManageTeamMembers?: boolean;
 }
 
 interface Invoice {
@@ -81,7 +96,7 @@ export default function TeamPage() {
     canManageTeamMembers: false,
   });
 
-  const [editMember, setEditMember] = useState<Partial<TeamMember>>({});
+  const [editMember, setEditMember] = useState<EditMemberForm>({});
 
   // Fetch team members
   const { data: teamMembers = [], isLoading: isLoadingMembers } = useQuery({
@@ -195,7 +210,19 @@ export default function TeamPage() {
       return;
     }
 
-    createMemberMutation.mutate(newMember);
+    // Convert boolean permissions to string values for API
+    const memberData = {
+      ...newMember,
+      canCreateInvoices: newMember.canCreateInvoices.toString(),
+      canDeleteInvoices: newMember.canDeleteInvoices.toString(),
+      canManageServices: newMember.canManageServices.toString(),
+      canManageCompanyProfiles: newMember.canManageCompanyProfiles.toString(),
+      canManagePaymentMethods: newMember.canManagePaymentMethods.toString(),
+      canManageTemplates: newMember.canManageTemplates.toString(),
+      canViewOnlyAssignedInvoices: newMember.canViewOnlyAssignedInvoices.toString(),
+      canManageTeamMembers: newMember.canManageTeamMembers.toString(),
+    };
+    createMemberMutation.mutate(memberData);
   };
 
   const handleEditMember = (member: TeamMember) => {
@@ -219,9 +246,21 @@ export default function TeamPage() {
   const handleSubmitEditMember = () => {
     if (!selectedMember) return;
 
+    // Convert boolean permissions to string values for API
+    const memberData = {
+      ...editMember,
+      canCreateInvoices: editMember.canCreateInvoices?.toString(),
+      canDeleteInvoices: editMember.canDeleteInvoices?.toString(),
+      canManageServices: editMember.canManageServices?.toString(),
+      canManageCompanyProfiles: editMember.canManageCompanyProfiles?.toString(),
+      canManagePaymentMethods: editMember.canManagePaymentMethods?.toString(),
+      canManageTemplates: editMember.canManageTemplates?.toString(),
+      canViewOnlyAssignedInvoices: editMember.canViewOnlyAssignedInvoices?.toString(),
+      canManageTeamMembers: editMember.canManageTeamMembers?.toString(),
+    };
     updateMemberMutation.mutate({
       id: selectedMember.id,
-      data: editMember
+      data: memberData
     });
   };
 
@@ -645,7 +684,7 @@ export default function TeamPage() {
                     <div key={key} className="flex items-center space-x-2">
                       <Checkbox
                         id={`edit-${key}`}
-                        checked={editMember[key as keyof typeof editMember] as boolean || false}
+                        checked={Boolean(editMember[key as keyof typeof editMember]) || false}
                         onCheckedChange={(checked) => 
                           setEditMember(prev => ({ ...prev, [key]: checked }))
                         }
