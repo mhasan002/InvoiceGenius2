@@ -428,23 +428,18 @@ export default function CreateInvoice() {
                 // Minimalist Red Template with exact geometric design
                 <div data-invoice-preview className="bg-white shadow-lg rounded-lg max-w-4xl mx-auto relative overflow-hidden" 
                      style={{ color: defaultTemplate?.textColor || '#000', fontFamily: defaultTemplate?.fontFamily || 'inherit' }}>
-                  {/* Geometric Header with diagonal design */}
-                  <div className="relative">
-                    <div 
-                      className="w-full h-16"
-                      style={{ 
-                        backgroundColor: defaultTemplate?.primaryColor || '#991b1b'
-                      }}
-                    ></div>
-                    {/* Geometric diagonal cut */}
-                    <div 
-                      className="absolute top-0 right-0 w-32 h-16"
-                      style={{ 
-                        backgroundColor: defaultTemplate?.primaryColor || '#991b1b',
-                        clipPath: 'polygon(30% 0%, 100% 0%, 100% 100%, 0% 100%)'
-                      }}
-                    ></div>
-                    <div className="p-8 pt-8 relative z-10">
+                  {/* New Geometric Header Design with Diagonal Layers */}
+                  <div className="relative h-36 w-full bg-white overflow-hidden">
+                    {/* Diagonal Layer 1 */}
+                    <div className="absolute top-0 left-0 w-80 h-48 bg-[#660033] transform -skew-x-12"></div>
+                    
+                    {/* Diagonal Layer 2 */}
+                    <div className="absolute top-0 left-20 w-72 h-48 bg-[#99004d] transform -skew-x-12"></div>
+                    
+                    {/* Diagonal Layer 3 (smaller accent) */}
+                    <div className="absolute top-0 left-40 w-40 h-40 bg-[#cc0066] transform -skew-x-12 opacity-90"></div>
+                  </div>
+                  <div className="p-8 pt-4 relative z-10 bg-white">
                       {/* Logo and Company */}
                       <div className="mb-8">
                         <div className="flex items-center mb-2">
@@ -619,10 +614,7 @@ export default function CreateInvoice() {
                           <p className="whitespace-pre-line text-sm">{terms || 'Payment is due within 30 days of invoice date. Late payments may incur additional fees.'}</p>
                         </div>
                       )}
-                    </div>
                   </div>
-                  
-
                 </div>
               ) : (
                 // Professional Template (default)

@@ -226,19 +226,24 @@ export default function Templates() {
       config: editingTemplate
     };
 
-    // Check if this is an existing saved template (not a built-in one)
-    const existingTemplate = templates.find((t: Template) => 
-      t.name === editingTemplate.name
-    );
+    // For template saving logic:
+    // 1. If editing template has real database ID (not containing '_'), update it
+    // 2. If it's a built-in template being customized, check for existing saved version
+    // 3. Otherwise create new template
+    
+    const isBuiltInTemplate = editingTemplate.id.includes('_');
+    const existingDbTemplate = isBuiltInTemplate ? 
+      templates.find((t: Template) => t.name === editingTemplate.name) : 
+      templates.find((t: Template) => t.id === editingTemplate.id);
 
-    if (existingTemplate && !editingTemplate.id.includes('_')) {
-      // This is an existing saved template being edited
+    if (existingDbTemplate && !isBuiltInTemplate) {
+      // Updating an existing custom template
       updateMutation.mutate({ id: editingTemplate.id, ...templateData });
-    } else if (existingTemplate && editingTemplate.id.includes('_')) {
-      // This is a built-in template with changes, update the existing saved version
-      updateMutation.mutate({ id: existingTemplate.id, ...templateData });
+    } else if (existingDbTemplate && isBuiltInTemplate) {
+      // Updating a built-in template that was already saved
+      updateMutation.mutate({ id: existingDbTemplate.id, ...templateData });
     } else {
-      // This is a new template
+      // Creating a new template (either new custom or first save of built-in)
       createMutation.mutate(templateData);
     }
   };
@@ -463,183 +468,109 @@ export default function Templates() {
 
   const MinimalistPreview = ({ template }: { template: TemplateConfig }) => (
     <div className="bg-white shadow-lg rounded-lg max-w-2xl mx-auto relative overflow-hidden" style={{ color: template.textColor, fontFamily: template.fontFamily }}>
-      {/* Geometric Header */}
-      <div className="relative">
-        <div 
-          className="w-full h-24"
-          style={{ backgroundColor: template.primaryColor }}
-        ></div>
-        {/* Geometric diagonal cut */}
-        <div 
-          className="absolute top-0 right-0 w-32 h-24"
-          style={{ 
-            backgroundColor: template.primaryColor,
-            clipPath: 'polygon(30% 0%, 100% 0%, 100% 100%, 0% 100%)'
-          }}
-        ></div>
-        <div className="p-8 pt-8 relative z-10">
-          {/* Logo and Company */}
-          <div className="mb-8">
-            <div className="flex items-center mb-2">
-              {template.logoVisible && (
-                <div className="w-8 h-8 mr-3" style={{ backgroundColor: template.primaryColor }}>
-                  <svg viewBox="0 0 32 32" className="w-full h-full p-1 text-white">
-                    <path fill="currentColor" d="M16 8l8 8-8 8-8-8z"/>
-                  </svg>
-                </div>
-              )}
-              <div>
-                <h1 className="text-2xl font-bold text-black">Your Company Name</h1>
-                <p className="text-sm text-gray-600">Company Tagline</p>
+      {/* New Geometric Header Design with Diagonal Layers */}
+      <div className="relative h-36 w-full bg-white overflow-hidden">
+        {/* Diagonal Layer 1 */}
+        <div className="absolute top-0 left-0 w-80 h-48 bg-[#660033] transform -skew-x-12"></div>
+        
+        {/* Diagonal Layer 2 */}
+        <div className="absolute top-0 left-20 w-72 h-48 bg-[#99004d] transform -skew-x-12"></div>
+        
+        {/* Diagonal Layer 3 (smaller accent) */}
+        <div className="absolute top-0 left-40 w-40 h-40 bg-[#cc0066] transform -skew-x-12 opacity-90"></div>
+      </div>
+      
+      <div className="p-8 pt-4 relative z-10 bg-white">
+        {/* Logo and Company */}
+        <div className="mb-6">
+          <div className="flex items-center mb-2">
+            {template.logoVisible && (
+              <div className="w-8 h-8 mr-3" style={{ backgroundColor: '#cc0066' }}>
+                <svg viewBox="0 0 32 32" className="w-full h-full p-1 text-white">
+                  <path fill="currentColor" d="M16 8l8 8-8 8-8-8z"/>
+                </svg>
               </div>
-            </div>
-          </div>
-
-          {/* Invoice Details */}
-          <div className="grid grid-cols-2 gap-8 mb-8">
+            )}
             <div>
-              <h3 className="font-semibold mb-2">ISSUED TO:</h3>
-              <div className="text-sm space-y-1">
-                <p>Richard Sanchez</p>
-                <p>Thynk Unlimited</p>
-                <p>123 Anywhere St., Any City</p>
-              </div>
-              
-              <h3 className="font-semibold mb-2 mt-4">PAY TO:</h3>
-              <div className="text-sm space-y-1">
-                <p>Your Company Bank</p>
-                <p>Account Name: Company Account</p>
-                <p>Account No.: 0123 4567 8901</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm space-y-1">
-                <p><strong>INVOICE NO:</strong> 01234</p>
-                <p><strong>DATE:</strong> 11.02.2030</p>
-                <p><strong>DUE DATE:</strong> 11.03.2030</p>
-              </div>
+              <h1 className="text-2xl font-bold text-black">Your Company Name</h1>
+              <p className="text-sm text-gray-600">Company Tagline</p>
             </div>
           </div>
+        </div>
 
-          {/* Items Table */}
-          <div className="mb-8">
-            <div className={`grid gap-4 pb-2 border-b-2`} style={{ borderColor: template.primaryColor, gridTemplateColumns: `repeat(${(template.fields?.filter(f => f.visible) || []).length + (template.customFields?.length || 0)}, 1fr)` }}>
-              {template.fields?.filter(f => f.visible)?.map(field => (
-                <div key={field.id} className="font-semibold text-sm uppercase">
-                  {field.customLabel || field.label}
-                </div>
-              ))}
-              {template.customFields?.map((customField, index) => (
-                <div key={`custom-header-${index}`} className="font-semibold text-sm uppercase">
-                  {customField.name}
-                </div>
-              ))}
+        {/* Invoice Details */}
+        <div className="grid grid-cols-2 gap-8 mb-6">
+          <div>
+            <h3 className="font-semibold mb-2">ISSUED TO:</h3>
+            <div className="text-sm space-y-1">
+              <p>Richard Sanchez</p>
+              <p>Thynk Unlimited</p>
+              <p>123 Anywhere St., Any City</p>
             </div>
             
-            {[
-              { desc: "Brand consultation", price: 100, qty: 1 },
-              { desc: "logo design", price: 100, qty: 1 },
-              { desc: "Website design", price: 100, qty: 1 },
-              { desc: "Social media templates", price: 100, qty: 1 },
-              { desc: "Brand photography", price: 100, qty: 1 },
-              { desc: "Brand guide", price: 100, qty: 1 },
-            ].map((item, idx) => (
-              <div key={idx} className={`grid gap-4 py-2 text-sm border-b`} style={{ 
-                borderColor: template.borderColor, 
-                backgroundColor: idx % 2 === 1 ? '#fef2f2' : 'transparent',
-                gridTemplateColumns: `repeat(${(template.fields?.filter(f => f.visible) || []).length + (template.customFields?.length || 0)}, 1fr)` 
-              }}>
-                {template.fields?.filter(f => f.visible)?.map((field, index) => (
-                  <div key={field.id}>
-                    {field.id === 'description' && item.desc}
-                    {field.id === 'unitPrice' && item.price}
-                    {field.id === 'quantity' && item.qty}
-                    {field.id === 'total' && `$${item.price * item.qty}`}
-                  </div>
-                ))}
-                {template.customFields?.map((customField, index) => (
-                  <div key={`custom-data-${index}`}>
-                    {customField.value || '-'}
-                  </div>
-                ))}
-              </div>
-            ))}
-
-
-
-            {/* Totals */}
-            <div className="mt-6 ml-auto w-64">
-              <hr className="mb-2" style={{ borderColor: template.primaryColor }} />
-              <div className="text-right space-y-1">
-                <div className="flex justify-between py-1">
-                  <span><strong>SUBTOTAL</strong></span>
-                  <span>$400</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span>Tax 10%</span>
-                  <span>$40</span>
-                </div>
-                <div className="flex justify-between font-bold py-1">
-                  <span><strong>TOTAL</strong></span>
-                  <span>$440</span>
-                </div>
-              </div>
+            <h3 className="font-semibold mb-2 mt-4">PAY TO:</h3>
+            <div className="text-sm space-y-1">
+              <p>Your Company Bank</p>
+              <p>Account Name: Company Account</p>
+              <p>Account No.: 0123 4567 8901</p>
             </div>
           </div>
+          <div className="text-right">
+            <div className="text-sm space-y-1">
+              <p><strong>INVOICE NO:</strong> 01234</p>
+              <p><strong>DATE:</strong> 11.02.2030</p>
+              <p><strong>DUE DATE:</strong> 11.03.2030</p>
+            </div>
+          </div>
+        </div>
 
-          {/* Payment Information Section */}
-          {template.showPayment && (
-            <div className="mt-8 p-4 border rounded-lg" style={{ borderColor: template.borderColor }}>
-              <h4 className="font-semibold mb-3" style={{ color: template.primaryColor }}>Payment Information</h4>
-              <div className="grid grid-cols-2 gap-6 text-sm">
-                <div>
-                  <p><strong>Payment Method:</strong> Bank Transfer</p>
-                  <p><strong>Bank Name:</strong> Sample Bank</p>
-                  <p><strong>Account Number:</strong> 1234567890</p>
-                  <p><strong>Routing Number:</strong> 123456789</p>
-                </div>
-                <div>
-                  <p><strong>Payment Due:</strong> 30 days</p>
-                  <p><strong>Late Fee:</strong> 1.5% per month</p>
-                  <p><strong>Discount:</strong> 2% if paid within 10 days</p>
-                </div>
+        {/* Items Table */}
+        <div className="mb-6">
+          <div className="grid grid-cols-4 gap-4 p-3 text-sm font-medium bg-red-100" style={{ color: '#660033' }}>
+            <div className="uppercase">Description</div>
+            <div className="uppercase">Price</div>
+            <div className="uppercase">Qty</div>
+            <div className="uppercase">Total</div>
+          </div>
+          
+          {[{ desc: 'Website Design', price: 100, qty: 1 }, { desc: 'Logo Design', price: 150, qty: 2 }].map((item, index) => (
+            <div key={index} className={`grid grid-cols-4 gap-4 p-3 text-sm border-b ${index % 2 === 0 ? 'bg-red-50' : 'bg-white'}`}>
+              <div>{item.desc}</div>
+              <div>${item.price}</div>
+              <div>{item.qty}</div>
+              <div>${item.price * item.qty}</div>
+            </div>
+          ))}
+
+          {/* Totals */}
+          <div className="mt-4 ml-auto w-64">
+            <hr className="mb-2" style={{ borderColor: '#cc0066' }} />
+            <div className="text-right space-y-1">
+              <div className="flex justify-between py-1">
+                <span><strong>SUBTOTAL</strong></span>
+                <span>$400</span>
               </div>
-            </div>
-          )}
-
-          {/* Footer */}
-          <div className="grid grid-cols-2 gap-8 mt-8">
-            <div>
-              {template.showNotes && (
-                <div className="text-sm">
-                  <div className="whitespace-pre-line">
-                    {template.notes || "Thank you for your business!"}
-                  </div>
-                </div>
-              )}
-              {template.showTerms && template.terms && (
-                <div className="text-sm mt-4">
-                  <h4 className="font-semibold mb-2">Terms & Conditions:</h4>
-                  <div className="whitespace-pre-line">
-                    {template.terms}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="text-right">
-              <div className="border-t pt-4" style={{ borderColor: template.primaryColor }}>
-                <p className="text-sm">Authorized Signed</p>
+              <div className="flex justify-between py-1">
+                <span>Tax 10%</span>
+                <span>$40</span>
+              </div>
+              <div className="flex justify-between font-bold py-1 text-red-800">
+                <span><strong>TOTAL</strong></span>
+                <span>$440</span>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Footer */}
+        {template.showNotes && (
+          <div className="mt-6 text-sm text-center">
+            <div className="whitespace-pre-line">
+              {template.notes || "Thank you for your business!"}
+            </div>
+          </div>
+        )}
       </div>
-      
-      {/* Bottom geometric element */}
-      <div 
-        className="absolute bottom-0 right-0 w-full h-16 clip-polygon-bottom"
-        style={{ backgroundColor: template.primaryColor }}
-      ></div>
     </div>
   );
 
