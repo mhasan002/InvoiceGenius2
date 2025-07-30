@@ -9,7 +9,11 @@ import {
   Calendar,
   FileText,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Phone,
+  Mail,
+  MapPin,
+  X
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,11 +57,12 @@ export default function InvoicesPage() {
   
   // State management
   const [searchQuery, setSearchQuery] = useState('');
+  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [dateRange, setDateRange] = useState('30days');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const itemsPerPage = 10;
 
   // Calculate date range
@@ -166,12 +171,67 @@ export default function InvoicesPage() {
     deleteMutation.mutate(invoiceId);
   };
 
-  const handleDownloadPDF = (invoice: Invoice) => {
-    // TODO: Implement PDF download functionality
-    toast({
-      title: "PDF Download",
-      description: "PDF download feature coming soon",
-    });
+  const handleDownloadPDF = async (invoice: Invoice) => {
+    try {
+      // First show the preview to render the invoice
+      setPreviewInvoice(invoice);
+      
+      // Wait a moment for the preview to render
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const { default: html2canvas } = await import('html2canvas');
+      const { default: jsPDF } = await import('jspdf');
+
+      // Find the preview element
+      const previewElement = document.querySelector('[data-invoice-preview]');
+      if (!previewElement) {
+        toast({ title: "Error generating PDF", description: "Preview not found. Please try again.", variant: "destructive" });
+        return;
+      }
+
+      toast({ title: "Generating PDF...", description: "Please wait while we create your invoice PDF." });
+
+      // Generate canvas from the preview
+      const canvas = await html2canvas(previewElement as HTMLElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      });
+
+      // Create PDF
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/png');
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      
+      // Save the PDF
+      const fileName = `invoice-${invoice.invoiceNumber || 'draft'}-${invoice.clientName.replace(/\s+/g, '-')}.pdf`;
+      pdf.save(fileName);
+
+      toast({ 
+        title: "PDF Downloaded!", 
+        description: `Invoice ${invoice.invoiceNumber} has been downloaded successfully.`
+      });
+
+      // Close preview after download
+      setPreviewInvoice(null);
+
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({ 
+        title: "Error generating PDF", 
+        description: "Please try again.",
+        variant: "destructive" 
+      });
+    }
+  };
+
+  const handlePreviewInvoice = (invoice: Invoice) => {
+    setPreviewInvoice(invoice);
   };
 
   const formatCurrency = (amount: number) => {
@@ -336,72 +396,14 @@ export default function InvoicesPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setSelectedInvoice(invoice)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                                <DialogHeader>
-                                  <DialogTitle>Invoice #{selectedInvoice?.invoiceNumber}</DialogTitle>
-                                </DialogHeader>
-                                {selectedInvoice && (
-                                  <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <h4 className="font-semibold">Client Information</h4>
-                                        <p>{selectedInvoice.clientName}</p>
-                                        {selectedInvoice.clientEmail && <p>{selectedInvoice.clientEmail}</p>}
-                                        {selectedInvoice.clientPhone && <p>{selectedInvoice.clientPhone}</p>}
-                                        {selectedInvoice.clientAddress && (
-                                          <p className="whitespace-pre-line">{selectedInvoice.clientAddress}</p>
-                                        )}
-                                      </div>
-                                      <div>
-                                        <h4 className="font-semibold">Invoice Details</h4>
-                                        <p>Date: {formatDate(selectedInvoice.createdAt)}</p>
-                                        <p>Total: {formatCurrency(selectedInvoice.total)}</p>
-                                        {selectedInvoice.platform && <p>Platform: {selectedInvoice.platform}</p>}
-                                        <p>Payment To: {selectedInvoice.paymentReceivedBy || 'N/A'}</p>
-                                      </div>
-                                    </div>
-                                    
-                                    {selectedInvoice.items && selectedInvoice.items.length > 0 && (
-                                      <div>
-                                        <h4 className="font-semibold mb-2">Items</h4>
-                                        <div className="border rounded-lg overflow-hidden">
-                                          <Table>
-                                            <TableHeader>
-                                              <TableRow>
-                                                <TableHead>Description</TableHead>
-                                                <TableHead>Quantity</TableHead>
-                                                <TableHead>Unit Price</TableHead>
-                                                <TableHead>Total</TableHead>
-                                              </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                              {selectedInvoice.items.map((item: any, index: number) => (
-                                                <TableRow key={index}>
-                                                  <TableCell>{item.name || item.description}</TableCell>
-                                                  <TableCell>{item.quantity || 1}</TableCell>
-                                                  <TableCell>{formatCurrency(item.unitPrice || 0)}</TableCell>
-                                                  <TableCell>{formatCurrency(item.total || 0)}</TableCell>
-                                                </TableRow>
-                                              ))}
-                                            </TableBody>
-                                          </Table>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </DialogContent>
-                            </Dialog>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handlePreviewInvoice(invoice)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+
 
                             <Button
                               variant="ghost"
@@ -477,6 +479,134 @@ export default function InvoicesPage() {
           </div>
         )}
       </div>
+
+      {/* Invoice Preview Dialog */}
+      {previewInvoice && (
+        <Dialog open={!!previewInvoice} onOpenChange={() => setPreviewInvoice(null)}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                Invoice Preview - #{previewInvoice.invoiceNumber}
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleDownloadPDF(previewInvoice)}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PDF
+                </Button>
+              </DialogTitle>
+            </DialogHeader>
+            
+            {/* Invoice Template Preview */}
+            <div data-invoice-preview className="bg-white p-8 min-h-[800px] text-black">
+              {/* Header */}
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-800">INVOICE</h1>
+                  <p className="text-gray-600 mt-2">#{previewInvoice.invoiceNumber}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-600">Date</p>
+                  <p className="font-semibold">{formatDate(previewInvoice.createdAt)}</p>
+                </div>
+              </div>
+
+              {/* Bill To Section */}
+              <div className="grid grid-cols-2 gap-8 mb-8">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Bill To:</h3>
+                  <div className="space-y-1">
+                    <p className="font-semibold">{previewInvoice.clientName}</p>
+                    {previewInvoice.clientEmail && (
+                      <p className="text-gray-600 flex items-center">
+                        <Mail className="h-4 w-4 mr-2" />
+                        {previewInvoice.clientEmail}
+                      </p>
+                    )}
+                    {previewInvoice.clientPhone && (
+                      <p className="text-gray-600 flex items-center">
+                        <Phone className="h-4 w-4 mr-2" />
+                        {previewInvoice.clientPhone}
+                      </p>
+                    )}
+                    {previewInvoice.clientAddress && (
+                      <p className="text-gray-600 flex items-start">
+                        <MapPin className="h-4 w-4 mr-2 mt-1 flex-shrink-0" />
+                        <span className="whitespace-pre-line">{previewInvoice.clientAddress}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Payment To:</h3>
+                  <p className="font-semibold">{previewInvoice.paymentReceivedBy || 'N/A'}</p>
+                  {previewInvoice.platform && (
+                    <p className="text-gray-600 mt-2">Platform: {previewInvoice.platform}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div className="mb-8">
+                <div className="border border-gray-300 rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Description</th>
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Qty</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Rate</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previewInvoice.items?.map((item: any, index: number) => (
+                        <tr key={index} className="border-t border-gray-200">
+                          <td className="px-4 py-3 text-sm">
+                            <div>
+                              <p className="font-medium">{item.name}</p>
+                              {item.type === 'package' && item.packageServices && (
+                                <div className="mt-2 text-xs text-gray-600">
+                                  <p className="font-medium">Package includes:</p>
+                                  <ul className="list-disc list-inside mt-1">
+                                    {item.packageServices.map((service: any, idx: number) => (
+                                      <li key={idx}>{service.name} x{service.quantity}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center text-sm">{item.quantity || 1}</td>
+                          <td className="px-4 py-3 text-right text-sm">{formatCurrency(item.unitPrice || 0)}</td>
+                          <td className="px-4 py-3 text-right text-sm font-medium">{formatCurrency(item.total || 0)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div className="flex justify-end mb-8">
+                <div className="w-64">
+                  <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                    <div className="flex justify-between items-center text-2xl font-bold text-gray-800">
+                      <span>Total:</span>
+                      <span>{formatCurrency(previewInvoice.total)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="text-center text-sm text-gray-600 border-t border-gray-200 pt-4">
+                <p>Thank you for your business!</p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </DashboardLayout>
   );
 }
