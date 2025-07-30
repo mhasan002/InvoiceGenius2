@@ -65,6 +65,97 @@ export default function InvoicesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Fetch templates for proper preview styling
+  const { data: templates = [] } = useQuery({
+    queryKey: ['/api/templates'],
+    queryFn: async () => {
+      const res = await fetch('/api/templates', { credentials: 'include' });
+      if (!res.ok) {
+        console.error('Failed to fetch templates');
+        return [];
+      }
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    },
+  });
+
+  // Get default template and properly merge with defaults
+  const defaultTemplateFromDB = templates.find((t: any) => t.isDefault === "true") || templates[0];
+  
+  // Default template configurations
+  const defaultTemplates = [
+    {
+      id: "professional",
+      name: "Professional Grey",
+      description: "Clean and professional design with grey accents",
+      primaryColor: "#374151",
+      secondaryColor: "#6b7280",
+      textColor: "#1f2937",
+      fontFamily: "Inter, sans-serif",
+      logoVisible: true,
+      showNotes: true,
+      showTerms: true,
+      showPayment: true,
+      notes: "PLEASE SEND REMITTANCE TO:\nHELLO@REALLYGREATSITE.COM\n\nPAYMENT IS REQUIRED WITHIN 10\nBUSINESS DAYS OF INVOICE DATE.",
+      terms: "Payment terms and conditions apply. Late payments may incur additional fees.",
+      fields: [
+        { id: "description", name: "description", label: "Description", visible: true },
+        { id: "quantity", name: "quantity", label: "QTY", visible: true },
+        { id: "unitPrice", name: "unitPrice", label: "Rate", visible: false },
+        { id: "amount", name: "amount", label: "Amount", visible: false },
+        { id: "total", name: "total", label: "Total", visible: true },
+      ],
+      customFields: []
+    },
+    {
+      id: "minimalist",
+      name: "Minimalist Red",
+      description: "Modern minimalist design with red geometric elements",
+      primaryColor: "#991b1b",
+      secondaryColor: "#dc2626",
+      textColor: "#1f2937",
+      fontFamily: "Inter, sans-serif",
+      logoVisible: true,
+      showNotes: true,
+      showTerms: true,
+      showPayment: true,
+      notes: "Thank you for your business!",
+      terms: "Payment is due within 30 days of invoice date. Late payments may incur additional fees.",
+      fields: [
+        { id: "description", name: "description", label: "Description", visible: true },
+        { id: "quantity", name: "quantity", label: "QTY", visible: true },
+        { id: "unitPrice", name: "unitPrice", label: "Rate", visible: false },
+        { id: "amount", name: "amount", label: "Amount", visible: false },
+        { id: "total", name: "total", label: "Total", visible: true },
+      ],
+      customFields: []
+    }
+  ];
+  
+  // Merge database template with default template config, preserving database settings
+  let defaultTemplate = defaultTemplates[0]; // fallback
+  if (defaultTemplateFromDB) {
+    const baseTemplate = defaultTemplates.find(t => t.name === defaultTemplateFromDB.name) || defaultTemplates[0];
+    const dbConfig = defaultTemplateFromDB.config as any;
+    defaultTemplate = {
+      ...baseTemplate,
+      ...dbConfig,
+      // Explicitly preserve boolean values from database
+      showTerms: dbConfig?.showTerms !== undefined ? Boolean(dbConfig.showTerms) : baseTemplate.showTerms,
+      showNotes: dbConfig?.showNotes !== undefined ? Boolean(dbConfig.showNotes) : baseTemplate.showNotes,
+      logoVisible: dbConfig?.logoVisible !== undefined ? Boolean(dbConfig.logoVisible) : baseTemplate.logoVisible,
+      showPayment: dbConfig?.showPayment !== undefined ? Boolean(dbConfig.showPayment) : baseTemplate.showPayment,
+      // Ensure fields array is properly merged - always use base template fields as foundation
+      fields: baseTemplate.fields.map((baseField: any) => {
+        const dbField = dbConfig?.fields?.find((f: any) => f.id === baseField.id);
+        return {
+          ...baseField,
+          visible: dbField?.visible !== undefined ? Boolean(dbField.visible) : baseField.visible
+        };
+      }),
+    };
+  }
+
   // Calculate date range
   const getDateRange = () => {
     const now = new Date();
@@ -498,111 +589,247 @@ export default function InvoicesPage() {
               </DialogTitle>
             </DialogHeader>
             
-            {/* Invoice Template Preview */}
-            <div data-invoice-preview className="bg-white p-8 min-h-[800px] text-black">
-              {/* Header */}
-              <div className="flex justify-between items-start mb-8">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-800">INVOICE</h1>
-                  <p className="text-gray-600 mt-2">#{previewInvoice.invoiceNumber}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">Date</p>
-                  <p className="font-semibold">{formatDate(previewInvoice.createdAt)}</p>
-                </div>
-              </div>
-
-              {/* Bill To Section */}
-              <div className="grid grid-cols-2 gap-8 mb-8">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Bill To:</h3>
-                  <div className="space-y-1">
-                    <p className="font-semibold">{previewInvoice.clientName}</p>
-                    {previewInvoice.clientEmail && (
-                      <p className="text-gray-600 flex items-center">
-                        <Mail className="h-4 w-4 mr-2" />
-                        {previewInvoice.clientEmail}
-                      </p>
-                    )}
-                    {previewInvoice.clientPhone && (
-                      <p className="text-gray-600 flex items-center">
-                        <Phone className="h-4 w-4 mr-2" />
-                        {previewInvoice.clientPhone}
-                      </p>
-                    )}
-                    {previewInvoice.clientAddress && (
-                      <p className="text-gray-600 flex items-start">
-                        <MapPin className="h-4 w-4 mr-2 mt-1 flex-shrink-0" />
-                        <span className="whitespace-pre-line">{previewInvoice.clientAddress}</span>
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Payment To:</h3>
-                  <p className="font-semibold">{previewInvoice.paymentReceivedBy || 'N/A'}</p>
-                  {previewInvoice.platform && (
-                    <p className="text-gray-600 mt-2">Platform: {previewInvoice.platform}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Items Table */}
-              <div className="mb-8">
-                <div className="border border-gray-300 rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Description</th>
-                        <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Qty</th>
-                        <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Rate</th>
-                        <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {previewInvoice.items?.map((item: any, index: number) => (
-                        <tr key={index} className="border-t border-gray-200">
-                          <td className="px-4 py-3 text-sm">
-                            <div>
-                              <p className="font-medium">{item.name}</p>
-                              {item.type === 'package' && item.packageServices && (
-                                <div className="mt-2 text-xs text-gray-600">
-                                  <p className="font-medium">Package includes:</p>
-                                  <ul className="list-disc list-inside mt-1">
-                                    {item.packageServices.map((service: any, idx: number) => (
-                                      <li key={idx}>{service.name} x{service.quantity}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-center text-sm">{item.quantity || 1}</td>
-                          <td className="px-4 py-3 text-right text-sm">{formatCurrency(item.unitPrice || 0)}</td>
-                          <td className="px-4 py-3 text-right text-sm font-medium">{formatCurrency(item.total || 0)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Totals */}
-              <div className="flex justify-end mb-8">
-                <div className="w-64">
-                  <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
-                    <div className="flex justify-between items-center text-2xl font-bold text-gray-800">
-                      <span>Total:</span>
-                      <span>{formatCurrency(previewInvoice.total)}</span>
+            {/* Invoice Template Preview with Actual Design */}
+            <div data-invoice-preview className="bg-white text-black" style={{ fontFamily: defaultTemplate.fontFamily || 'Inter, sans-serif' }}>
+              {defaultTemplate.name === "Minimalist Red" ? (
+                // Minimalist Red Template
+                <div className="min-h-[850px]">
+                  {/* Header with Red Design */}
+                  <div className="relative bg-white">
+                    <div style={{ backgroundColor: defaultTemplate.primaryColor || '#991b1b' }} className="h-20 relative">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <h1 className="text-3xl font-bold text-white tracking-wider">INVOICE</h1>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                  
+                  <div className="p-8">
+                    {/* Invoice Details */}
+                    <div className="flex justify-between items-start mb-8">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">Invoice Number</p>
+                        <p className="font-bold text-lg">{previewInvoice.invoiceNumber}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-600 mb-1">Date</p>
+                        <p className="font-semibold">{formatDate(previewInvoice.createdAt)}</p>
+                      </div>
+                    </div>
 
-              {/* Footer */}
-              <div className="text-center text-sm text-gray-600 border-t border-gray-200 pt-4">
-                <p>Thank you for your business!</p>
-              </div>
+                    {/* Client and Company Info */}
+                    <div className="grid grid-cols-2 gap-8 mb-8">
+                      <div>
+                        <h3 className="text-lg font-bold mb-4" style={{ color: defaultTemplate.primaryColor }}>BILL TO</h3>
+                        <div className="space-y-2">
+                          <p className="font-semibold text-lg">{previewInvoice.clientName}</p>
+                          {previewInvoice.clientEmail && <p className="text-gray-600">{previewInvoice.clientEmail}</p>}
+                          {previewInvoice.clientPhone && <p className="text-gray-600">{previewInvoice.clientPhone}</p>}
+                          {previewInvoice.clientAddress && (
+                            <p className="text-gray-600 whitespace-pre-line">{previewInvoice.clientAddress}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold mb-4" style={{ color: defaultTemplate.primaryColor }}>PAYMENT TO</h3>
+                        <p className="font-semibold text-lg">{previewInvoice.paymentReceivedBy || 'N/A'}</p>
+                        {previewInvoice.platform && (
+                          <p className="text-gray-600 mt-2">Platform: {previewInvoice.platform}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Items Table */}
+                    <div className="mb-8">
+                      <table className="w-full">
+                        <thead>
+                          <tr style={{ backgroundColor: defaultTemplate.primaryColor || '#991b1b' }}>
+                            {defaultTemplate.fields.filter((f: any) => f.visible).map((field: any) => (
+                              <th key={field.id} className="px-4 py-3 text-left text-sm font-semibold text-white">
+                                {field.label}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {previewInvoice.items?.map((item: any, index: number) => (
+                            <tr key={index} className="border-b border-gray-200">
+                              {defaultTemplate.fields.filter((f: any) => f.visible).map((field: any) => (
+                                <td key={field.id} className="px-4 py-3 text-sm">
+                                  {field.id === 'description' && (
+                                    <div>
+                                      <p className="font-medium">{item.name}</p>
+                                      {item.type === 'package' && item.packageServices && (
+                                        <div className="mt-1 text-xs text-gray-600">
+                                          <p>Package includes:</p>
+                                          <ul className="list-disc list-inside">
+                                            {item.packageServices.map((service: any, idx: number) => (
+                                              <li key={idx}>{service.name} x{service.quantity}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  {field.id === 'quantity' && (item.quantity || 1)}
+                                  {field.id === 'unitPrice' && formatCurrency(item.unitPrice || 0)}
+                                  {field.id === 'amount' && formatCurrency(item.unitPrice * item.quantity || 0)}
+                                  {field.id === 'total' && (
+                                    <span className="font-semibold">{formatCurrency(item.total || 0)}</span>
+                                  )}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Total */}
+                    <div className="flex justify-end mb-8">
+                      <div className="w-64">
+                        <div className="border-2 rounded-lg p-4" style={{ borderColor: defaultTemplate.primaryColor }}>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xl font-bold">TOTAL:</span>
+                            <span className="text-2xl font-bold" style={{ color: defaultTemplate.primaryColor }}>
+                              {formatCurrency(previewInvoice.total)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Notes and Terms */}
+                    {defaultTemplate.showNotes && defaultTemplate.notes && (
+                      <div className="mb-6">
+                        <h4 className="font-semibold mb-2" style={{ color: defaultTemplate.primaryColor }}>NOTES</h4>
+                        <p className="text-sm text-gray-700 whitespace-pre-line">{defaultTemplate.notes}</p>
+                      </div>
+                    )}
+
+                    {defaultTemplate.showTerms && defaultTemplate.terms && (
+                      <div className="mb-6">
+                        <h4 className="font-semibold mb-2" style={{ color: defaultTemplate.primaryColor }}>TERMS & CONDITIONS</h4>
+                        <p className="text-sm text-gray-700">{defaultTemplate.terms}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                // Professional Grey Template
+                <div className="min-h-[850px] p-8">
+                  {/* Header */}
+                  <div className="flex justify-between items-start mb-8 pb-6 border-b-2" style={{ borderColor: defaultTemplate.primaryColor }}>
+                    <div>
+                      <h1 className="text-4xl font-bold" style={{ color: defaultTemplate.primaryColor }}>INVOICE</h1>
+                      <p className="text-gray-600 mt-2 text-lg">#{previewInvoice.invoiceNumber}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600 mb-1">Date</p>
+                      <p className="font-semibold text-lg">{formatDate(previewInvoice.createdAt)}</p>
+                    </div>
+                  </div>
+
+                  {/* Client and Company Info */}
+                  <div className="grid grid-cols-2 gap-8 mb-8">
+                    <div>
+                      <h3 className="text-lg font-bold mb-4" style={{ color: defaultTemplate.primaryColor }}>BILL TO</h3>
+                      <div className="space-y-2">
+                        <p className="font-semibold text-lg">{previewInvoice.clientName}</p>
+                        {previewInvoice.clientEmail && <p className="text-gray-600">{previewInvoice.clientEmail}</p>}
+                        {previewInvoice.clientPhone && <p className="text-gray-600">{previewInvoice.clientPhone}</p>}
+                        {previewInvoice.clientAddress && (
+                          <p className="text-gray-600 whitespace-pre-line">{previewInvoice.clientAddress}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold mb-4" style={{ color: defaultTemplate.primaryColor }}>PAYMENT TO</h3>
+                      <p className="font-semibold text-lg">{previewInvoice.paymentReceivedBy || 'N/A'}</p>
+                      {previewInvoice.platform && (
+                        <p className="text-gray-600 mt-2">Platform: {previewInvoice.platform}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Items Table */}
+                  <div className="mb-8">
+                    <table className="w-full border border-gray-300">
+                      <thead style={{ backgroundColor: defaultTemplate.primaryColor }}>
+                        <tr>
+                          {defaultTemplate.fields.filter((f: any) => f.visible).map((field: any) => (
+                            <th key={field.id} className="px-4 py-3 text-left text-sm font-semibold text-white">
+                              {field.label}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {previewInvoice.items?.map((item: any, index: number) => (
+                          <tr key={index} className="border-b border-gray-200">
+                            {defaultTemplate.fields.filter((f: any) => f.visible).map((field: any) => (
+                              <td key={field.id} className="px-4 py-4 text-sm">
+                                {field.id === 'description' && (
+                                  <div>
+                                    <p className="font-medium">{item.name}</p>
+                                    {item.type === 'package' && item.packageServices && (
+                                      <div className="mt-2 text-xs text-gray-600">
+                                        <p className="font-medium">Package includes:</p>
+                                        <ul className="list-disc list-inside mt-1">
+                                          {item.packageServices.map((service: any, idx: number) => (
+                                            <li key={idx}>{service.name} x{service.quantity}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {field.id === 'quantity' && (item.quantity || 1)}
+                                {field.id === 'unitPrice' && formatCurrency(item.unitPrice || 0)}
+                                {field.id === 'amount' && formatCurrency(item.unitPrice * item.quantity || 0)}
+                                {field.id === 'total' && (
+                                  <span className="font-semibold">{formatCurrency(item.total || 0)}</span>
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Total */}
+                  <div className="flex justify-end mb-8">
+                    <div className="w-64">
+                      <div className="border-2 rounded-lg p-6" style={{ 
+                        borderColor: defaultTemplate.primaryColor,
+                        backgroundColor: `${defaultTemplate.primaryColor}10`
+                      }}>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xl font-bold">TOTAL:</span>
+                          <span className="text-2xl font-bold" style={{ color: defaultTemplate.primaryColor }}>
+                            {formatCurrency(previewInvoice.total)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notes and Terms */}
+                  {defaultTemplate.showNotes && defaultTemplate.notes && (
+                    <div className="mb-6">
+                      <h4 className="font-semibold mb-2 text-lg" style={{ color: defaultTemplate.primaryColor }}>NOTES</h4>
+                      <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{defaultTemplate.notes}</p>
+                    </div>
+                  )}
+
+                  {defaultTemplate.showTerms && defaultTemplate.terms && (
+                    <div className="mb-6">
+                      <h4 className="font-semibold mb-2 text-lg" style={{ color: defaultTemplate.primaryColor }}>TERMS & CONDITIONS</h4>
+                      <p className="text-sm text-gray-700 leading-relaxed">{defaultTemplate.terms}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>
