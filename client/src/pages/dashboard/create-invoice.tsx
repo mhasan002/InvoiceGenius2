@@ -188,6 +188,11 @@ export default function CreateInvoice() {
       showNotes: dbConfig?.showNotes !== undefined ? Boolean(dbConfig.showNotes) : baseTemplate.showNotes,
       logoVisible: dbConfig?.logoVisible !== undefined ? Boolean(dbConfig.logoVisible) : baseTemplate.logoVisible,
       showPayment: dbConfig?.showPayment !== undefined ? Boolean(dbConfig.showPayment) : baseTemplate.showPayment,
+      // Ensure fields array is properly merged
+      fields: dbConfig?.fields ? dbConfig.fields.map((field: any) => ({
+        ...field,
+        visible: field.visible !== undefined ? Boolean(field.visible) : true
+      })) : baseTemplate.fields,
     };
   }
 
@@ -562,7 +567,7 @@ export default function CreateInvoice() {
                                     )}
                                   </div>
                                 )}
-                                {field.id === 'quantity' && (item.quantity || 1)}
+                                {field.id === 'quantity' && String(item.quantity || 1)}
                                 {field.id === 'unitPrice' && `$${item.unitPrice.toFixed(2)}`}
                                 {field.id === 'amount' && `$${(item.unitPrice * item.quantity).toFixed(2)}`}
                                 {field.id === 'total' && `$${item.total.toFixed(2)}`}
@@ -745,7 +750,7 @@ export default function CreateInvoice() {
                                 )}
                               </div>
                             )}
-                            {field.id === 'quantity' && (item.quantity || 1)}
+                            {field.id === 'quantity' && String(item.quantity || 1)}
                             {field.id === 'unitPrice' && `$${item.unitPrice.toFixed(2)}`}
                             {field.id === 'amount' && `$${(item.unitPrice * item.quantity).toFixed(2)}`}
                             {field.id === 'total' && `$${item.total.toFixed(2)}`}
