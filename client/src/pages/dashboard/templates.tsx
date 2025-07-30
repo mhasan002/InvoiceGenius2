@@ -523,13 +523,13 @@ export default function Templates() {
 
           {/* Items Table */}
           <div className="mb-8">
-            <div className={`grid gap-4 pb-2 border-b-2`} style={{ borderColor: template.primaryColor, gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length + template.customFields.length}, 1fr)` }}>
-              {template.fields.filter(f => f.visible).map(field => (
+            <div className={`grid gap-4 pb-2 border-b-2`} style={{ borderColor: template.primaryColor, gridTemplateColumns: `repeat(${(template.fields?.filter(f => f.visible) || []).length + (template.customFields?.length || 0)}, 1fr)` }}>
+              {template.fields?.filter(f => f.visible)?.map(field => (
                 <div key={field.id} className="font-semibold text-sm uppercase">
                   {field.customLabel || field.label}
                 </div>
               ))}
-              {template.customFields.map((customField, index) => (
+              {template.customFields?.map((customField, index) => (
                 <div key={`custom-header-${index}`} className="font-semibold text-sm uppercase">
                   {customField.name}
                 </div>
@@ -547,9 +547,9 @@ export default function Templates() {
               <div key={idx} className={`grid gap-4 py-2 text-sm border-b`} style={{ 
                 borderColor: template.borderColor, 
                 backgroundColor: idx % 2 === 1 ? '#fef2f2' : 'transparent',
-                gridTemplateColumns: `repeat(${template.fields.filter(f => f.visible).length + template.customFields.length}, 1fr)` 
+                gridTemplateColumns: `repeat(${(template.fields?.filter(f => f.visible) || []).length + (template.customFields?.length || 0)}, 1fr)` 
               }}>
-                {template.fields.filter(f => f.visible).map((field, index) => (
+                {template.fields?.filter(f => f.visible)?.map((field, index) => (
                   <div key={field.id}>
                     {field.id === 'description' && item.desc}
                     {field.id === 'unitPrice' && item.price}
@@ -557,7 +557,7 @@ export default function Templates() {
                     {field.id === 'total' && `$${item.price * item.qty}`}
                   </div>
                 ))}
-                {template.customFields.map((customField, index) => (
+                {template.customFields?.map((customField, index) => (
                   <div key={`custom-data-${index}`}>
                     {customField.value || '-'}
                   </div>
