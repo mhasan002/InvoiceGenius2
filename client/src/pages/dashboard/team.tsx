@@ -86,21 +86,27 @@ export default function TeamPage() {
   // Fetch team members
   const { data: teamMembers = [], isLoading: isLoadingMembers } = useQuery({
     queryKey: ["/api/team-members"],
-    queryFn: () => apiRequest("/api/team-members")
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/team-members");
+      return res.json();
+    }
   });
 
   // Fetch invoices for activity tracking
   const { data: invoices = [] } = useQuery({
     queryKey: ["/api/invoices"],
-    queryFn: () => apiRequest("/api/invoices")
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/invoices");
+      return res.json();
+    }
   });
 
   // Create team member mutation
   const createMemberMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/team-members", {
-      method: "POST",
-      body: JSON.stringify(data)
-    }),
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/team-members", data);
+      return res.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/team-members"] });
       setIsAddDialogOpen(false);
@@ -134,11 +140,10 @@ export default function TeamPage() {
 
   // Update team member mutation
   const updateMemberMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => 
-      apiRequest(`/api/team-members/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data)
-      }),
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const res = await apiRequest("PUT", `/api/team-members/${id}`, data);
+      return res.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/team-members"] });
       setIsEditDialogOpen(false);
@@ -160,7 +165,10 @@ export default function TeamPage() {
 
   // Delete team member mutation
   const deleteMemberMutation = useMutation({
-    mutationFn: (id: string) => apiRequest(`/api/team-members/${id}`, { method: "DELETE" }),
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("DELETE", `/api/team-members/${id}`);
+      return res.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/team-members"] });
       toast({
@@ -672,6 +680,9 @@ export default function TeamPage() {
               <DialogTitle>
                 Permissions for {selectedMember?.fullName || selectedMember?.email}
               </DialogTitle>
+              <DialogDescription>
+                View all access permissions assigned to this team member.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               {selectedMember && Object.entries(permissionLabels).map(([key, label]) => {
