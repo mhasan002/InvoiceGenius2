@@ -188,11 +188,14 @@ export default function CreateInvoice() {
       showNotes: dbConfig?.showNotes !== undefined ? Boolean(dbConfig.showNotes) : baseTemplate.showNotes,
       logoVisible: dbConfig?.logoVisible !== undefined ? Boolean(dbConfig.logoVisible) : baseTemplate.logoVisible,
       showPayment: dbConfig?.showPayment !== undefined ? Boolean(dbConfig.showPayment) : baseTemplate.showPayment,
-      // Ensure fields array is properly merged
-      fields: dbConfig?.fields ? dbConfig.fields.map((field: any) => ({
-        ...field,
-        visible: field.visible !== undefined ? Boolean(field.visible) : true
-      })) : baseTemplate.fields,
+      // Ensure fields array is properly merged - always use base template fields as foundation
+      fields: baseTemplate.fields.map((baseField: any) => {
+        const dbField = dbConfig?.fields?.find((f: any) => f.id === baseField.id);
+        return {
+          ...baseField,
+          visible: dbField?.visible !== undefined ? Boolean(dbField.visible) : baseField.visible
+        };
+      }),
     };
   }
 
@@ -547,8 +550,10 @@ export default function CreateInvoice() {
                                  backgroundColor: idx % 2 === 1 ? '#fef2f2' : 'transparent',
                                  gridTemplateColumns: `repeat(${(defaultTemplate?.fields?.filter((f: any) => f.visible) || []).length + (defaultTemplate?.customFields?.length || 0)}, 1fr)`
                                }}>
-                            {defaultTemplate?.fields?.filter((f: any) => f.visible)?.map((field: any) => (
-                              <div key={field.id} className={field.id === 'description' ? '' : 'text-center'}>
+                            {defaultTemplate?.fields?.filter((f: any) => f.visible)?.map((field: any) => {
+                              console.log('Row field:', field, 'Item data:', item);
+                              return (
+                                <div key={field.id} className={field.id === 'description' ? '' : 'text-center'}>
                                 {field.id === 'description' && (
                                   <div>
                                     <p>{item.name}</p>
@@ -573,8 +578,9 @@ export default function CreateInvoice() {
                                 {field.id === 'unitPrice' && `$${item.unitPrice.toFixed(2)}`}
                                 {field.id === 'amount' && `$${(item.unitPrice * item.quantity).toFixed(2)}`}
                                 {field.id === 'total' && `$${item.total.toFixed(2)}`}
-                              </div>
-                            ))}
+                                </div>
+                              );
+                            })}
                             {defaultTemplate?.customFields?.map((field: any, idx: number) => {
                               // Get custom field value from clientCustomFields
                               const customFieldValue = clientCustomFields.find(cf => cf.name === field.name)?.value || field.value || '-';
