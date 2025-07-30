@@ -74,7 +74,7 @@ export const paymentMethods = pgTable("payment_methods", {
 export const invoices = pgTable("invoices", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id),
-  createdBy: varchar("created_by").references(() => teamMembers.id), // Track which team member created this invoice
+  createdBy: varchar("created_by").references(() => teamMembers.id, { onDelete: "set null" }), // Track which team member created this invoice
   invoiceNumber: varchar("invoice_number", { length: 100 }).notNull().unique(),
   
   // Client details
