@@ -172,7 +172,8 @@ const requireAuth = (req: any, res: any, next: any) => {
 const requirePermission = (permission: string) => {
   return (req: any, res: any, next: any) => {
     // Admin users (regular users) have all permissions
-    if (req.session?.userType === "admin") {
+    // Also treat users without userType as admin (legacy sessions)
+    if (req.session?.userType === "admin" || !req.session?.userType) {
       return next();
     }
     
@@ -222,11 +223,13 @@ const authRoutes = (app: Express) => {
       (req as any).session.userId = user.id;
       (req as any).session.userEmail = user.email;
       (req as any).session.username = user.username;
+      (req as any).session.userType = "admin";
 
       res.status(201).json({
         id: user.id,
         username: user.username,
         email: user.email,
+        userType: "admin",
         createdAt: user.createdAt,
       });
     } catch (error) {
