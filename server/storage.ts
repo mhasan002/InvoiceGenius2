@@ -91,10 +91,11 @@ export class DatabaseStorage implements IStorage {
   private db;
 
   constructor() {
-    if (!process.env.DATABASE_URL) {
-      throw new Error("DATABASE_URL environment variable is required");
+    const dbUrl = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
+    if (!dbUrl) {
+      throw new Error("SUPABASE_DATABASE_URL environment variable is required");
     }
-    const sql = postgres(process.env.DATABASE_URL);
+    const sql = postgres(dbUrl);
     this.db = drizzle(sql);
   }
 
@@ -515,4 +516,4 @@ export class MemStorage implements IStorage {
 }
 
 // Use database storage if DATABASE_URL is configured, otherwise use memory storage
-export const storage: IStorage = process.env.DATABASE_URL ? new DatabaseStorage() : new MemStorage();
+export const storage: IStorage = (process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL) ? new DatabaseStorage() : new MemStorage();
