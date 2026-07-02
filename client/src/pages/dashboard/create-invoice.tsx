@@ -415,7 +415,6 @@ export default function CreateInvoice() {
       }
 
       const { default: html2canvas } = await import('html2canvas');
-      const { default: jsPDF } = await import('jspdf');
 
       // Find the preview element
       const previewElement = document.querySelector('[data-invoice-preview]');
@@ -434,20 +433,19 @@ export default function CreateInvoice() {
         backgroundColor: '#ffffff'
       });
 
-      // Create PDF
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgData = canvas.toDataURL('image/png');
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      
-      // Save the PDF
-      const fileName = `invoice-${invoiceNumber || 'draft'}-${clientName.replace(/\s+/g, '-')}.pdf`;
-      pdf.save(fileName);
-      
-      toast({ title: "PDF downloaded successfully!", description: `Invoice saved as ${fileName}` });
+      // Download as PNG image
+      const fileName = `invoice-${invoiceNumber || 'draft'}-${clientName.replace(/\s+/g, '-')}.png`;
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+
+      toast({ title: "Invoice downloaded successfully!", description: `Invoice saved as ${fileName}` });
     } catch (error) {
       console.error('PDF generation error:', error);
       toast({ title: "Error generating PDF", description: "Failed to create PDF. Please try again.", variant: "destructive" });

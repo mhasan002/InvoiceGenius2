@@ -93,7 +93,7 @@ export class DatabaseStorage implements IStorage {
   constructor() {
     const dbUrl = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
     if (!dbUrl) {
-      throw new Error("SUPABASE_DATABASE_URL environment variable is required");
+      throw new Error("SUPABASE_DATABASE_URL or DATABASE_URL environment variable is required");
     }
     const sql = postgres(dbUrl);
     this.db = drizzle(sql);

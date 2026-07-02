@@ -330,7 +330,6 @@ export default function InvoicesPage() {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const { default: html2canvas } = await import('html2canvas');
-      const { default: jsPDF } = await import('jspdf');
 
       // Find the preview element
       const previewElement = document.querySelector('[data-invoice-preview]');
@@ -339,7 +338,7 @@ export default function InvoicesPage() {
         return;
       }
 
-      toast({ title: "Generating PDF...", description: "Please wait while we create your invoice PDF." });
+      toast({ title: "Generating invoice...", description: "Please wait while we create your invoice." });
 
       // Generate canvas from the preview
       const canvas = await html2canvas(previewElement as HTMLElement, {
@@ -349,21 +348,20 @@ export default function InvoicesPage() {
         backgroundColor: '#ffffff'
       });
 
-      // Create PDF
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgData = canvas.toDataURL('image/png');
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      
-      // Save the PDF
-      const fileName = `invoice-${invoice.invoiceNumber || 'draft'}-${invoice.clientName.replace(/\s+/g, '-')}.pdf`;
-      pdf.save(fileName);
+      // Download as PNG image
+      const fileName = `invoice-${invoice.invoiceNumber || 'draft'}-${invoice.clientName.replace(/\s+/g, '-')}.png`;
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, 'image/png');
 
       toast({ 
-        title: "PDF Downloaded!", 
+        title: "Invoice Downloaded!", 
         description: `Invoice ${invoice.invoiceNumber} has been downloaded successfully.`
       });
 
