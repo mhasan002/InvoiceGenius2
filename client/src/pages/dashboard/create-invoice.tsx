@@ -679,14 +679,14 @@ export default function CreateInvoice() {
                       {(defaultTemplate?.showNotes || showNotes) && (
                         <div className="mb-6">
                           <h4 className="font-semibold mb-2">NOTES:</h4>
-                          <p className="whitespace-pre-line text-sm">{defaultTemplate?.notes || notes || 'Thank you for your business!'}</p>
+                          <p className="whitespace-pre-line text-sm">{(showNotes && notes) ? notes : (defaultTemplate?.notes || 'Thank you for your business!')}</p>
                         </div>
                       )}
                       
                       {(defaultTemplate?.showTerms || showTerms) && (
                         <div className="mb-6">
                           <h4 className="font-semibold mb-2">TERMS & CONDITIONS:</h4>
-                          <p className="whitespace-pre-line text-sm">{defaultTemplate?.terms || terms || 'Payment is due within 30 days of invoice date. Late payments may incur additional fees.'}</p>
+                          <p className="whitespace-pre-line text-sm">{(showTerms && terms) ? terms : (defaultTemplate?.terms || 'Payment is due within 30 days of invoice date. Late payments may incur additional fees.')}</p>
                         </div>
                       )}
                   </div>
@@ -866,13 +866,13 @@ export default function CreateInvoice() {
                       {(defaultTemplate?.showNotes || showNotes) && (
                         <div className="text-sm">
                           <h4 className="font-semibold mb-2">NOTES:</h4>
-                          <div className="whitespace-pre-line">{defaultTemplate?.notes || notes || 'Thank you for your business!'}</div>
+                          <div className="whitespace-pre-line">{(showNotes && notes) ? notes : (defaultTemplate?.notes || 'Thank you for your business!')}</div>
                         </div>
                       )}
                       {(defaultTemplate?.showTerms || showTerms) && (
                         <div className="text-sm mt-4">
                           <h4 className="font-semibold mb-2">TERMS & CONDITIONS:</h4>
-                          <div className="whitespace-pre-line">{defaultTemplate?.terms || terms || 'Payment is due within 30 days of invoice date. Late payments may incur additional fees.'}</div>
+                          <div className="whitespace-pre-line">{(showTerms && terms) ? terms : (defaultTemplate?.terms || 'Payment is due within 30 days of invoice date. Late payments may incur additional fees.')}</div>
                         </div>
                       )}
                     </div>
