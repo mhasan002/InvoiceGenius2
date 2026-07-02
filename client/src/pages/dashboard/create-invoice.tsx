@@ -675,15 +675,15 @@ export default function CreateInvoice() {
                         </div>
                       )}
 
-                      {/* Notes and Terms - Use template settings */}
-                      {defaultTemplate?.showNotes && (
+                      {/* Notes and Terms - Use template settings or local toggles */}
+                      {(defaultTemplate?.showNotes || showNotes) && (
                         <div className="mb-6">
                           <h4 className="font-semibold mb-2">NOTES:</h4>
                           <p className="whitespace-pre-line text-sm">{defaultTemplate?.notes || notes || 'Thank you for your business!'}</p>
                         </div>
                       )}
                       
-                      {defaultTemplate?.showTerms && (
+                      {(defaultTemplate?.showTerms || showTerms) && (
                         <div className="mb-6">
                           <h4 className="font-semibold mb-2">TERMS & CONDITIONS:</h4>
                           <p className="whitespace-pre-line text-sm">{defaultTemplate?.terms || terms || 'Payment is due within 30 days of invoice date. Late payments may incur additional fees.'}</p>
@@ -863,13 +863,13 @@ export default function CreateInvoice() {
                   {/* Footer */}
                   <div className="grid grid-cols-2 gap-8 mt-8">
                     <div>
-                      {defaultTemplate?.showNotes && (
+                      {(defaultTemplate?.showNotes || showNotes) && (
                         <div className="text-sm">
                           <h4 className="font-semibold mb-2">NOTES:</h4>
                           <div className="whitespace-pre-line">{defaultTemplate?.notes || notes || 'Thank you for your business!'}</div>
                         </div>
                       )}
-                      {defaultTemplate?.showTerms && (
+                      {(defaultTemplate?.showTerms || showTerms) && (
                         <div className="text-sm mt-4">
                           <h4 className="font-semibold mb-2">TERMS & CONDITIONS:</h4>
                           <div className="whitespace-pre-line">{defaultTemplate?.terms || terms || 'Payment is due within 30 days of invoice date. Late payments may incur additional fees.'}</div>
